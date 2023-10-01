@@ -5,8 +5,11 @@
 
 namespace jx 
 {
-    class task
-    {
+    inline namespace v1
+    {   
+        class task
+        {
 
-    };
+        };
+    } // namespace v1
 } // namespace jx
