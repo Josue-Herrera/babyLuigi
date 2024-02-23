@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <functional>
 
 namespace jx 
 {
@@ -14,7 +15,7 @@ namespace jx
 // From Sean Parent (https://youtu.be/zULU6Hhp42w?si=VgR3ZLi5AJuaQ8kR)
 
 // *** Common type vocabulary *** //
-using function_signiture_t = void();
+using function_signiture_t = auto (void) -> void;
 using function_capture_t   = std::function<function_signiture_t>;
 
 class notification_queue

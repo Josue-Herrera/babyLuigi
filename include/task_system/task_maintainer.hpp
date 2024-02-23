@@ -19,8 +19,17 @@ namespace jx
   
         class task_maintainer : task_system {
         public:
-            auto service(task_view) noexcept -> bool;
+
+            [[nodiscard]] auto service(task_view) noexcept -> bool;
+
+
+        private:
+        
+            class task {
+
+            };     
         };
+
 
     } // namespace v1
 } // namespace jx
