@@ -9,8 +9,7 @@ inline namespace v1 {
 using json = nlohmann::json;
 
 [[nodiscard]] auto valid(json const & json_task) noexcept -> bool {
-  return json_task.contains("dependencies") && 
-        json_task.contains("name") && 
+  return json_task.contains("name") && 
         json_task.contains("type") &&
         json_task.contains("payload");
 }
@@ -20,9 +19,12 @@ using json = nlohmann::json;
   json json_task = json::parse(view.request);
 
   if(not valid(json_task)) {
-    spdlog::warn("json task {} is invalid");
+    spdlog::warn("json task is invalid");
     return false;
   }
+
+
+
 
   return true;
 }

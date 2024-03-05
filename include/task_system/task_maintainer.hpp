@@ -2,6 +2,7 @@
 
 #include "task_system.hpp"
 #include "task_queue.hpp"
+#include "graph/graph.hpp"
 
 namespace jx 
 {
@@ -19,15 +20,21 @@ namespace jx
   
         class task_maintainer : task_system {
         public:
+            using task_map = std::unordered_map<std::string, std::vector<std::string>>;
 
             [[nodiscard]] auto service(task_view) noexcept -> bool;
-
+        
 
         private:
         
             class task {
 
+
             };     
+
+            task_map root_to_dependencies{};
+
+
         };
 
 

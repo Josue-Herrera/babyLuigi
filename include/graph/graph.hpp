@@ -9,15 +9,15 @@ namespace jx
     inline namespace v1 
     {
         // This Graph will use an adjacency list.
-        template<class T>
+        template<class T, class U = T>
         class graph
         {    
-            using AdjacencyList = std::unordered_multimap<T, T>;
+            using adjacencyList = std::unordered_multimap<T, U>;
 
-            
         
         private:
-            AdjacencyList dependency_list{};
+            adjacencyList adjacency_list{};
+
         };
     }
 } // namespace jx
