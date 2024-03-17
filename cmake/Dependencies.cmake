@@ -42,9 +42,10 @@ function(setup_dependencies)
   endif()
 
   if(NOT TARGET zmq::zmq)
+    # This is to add cmake/FindZeroMQ.cmake
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/catch2-src/CMake")
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/catch2-src/extras")
+    set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "doc" FORCE)
+    set(CATCH_BUILD_EXAMPLES OFF CACHE BOOL "doc" FORCE)
     find_package(ZeroMQ REQUIRED)
     cpmaddpackage(
       NAME
@@ -56,6 +57,8 @@ function(setup_dependencies)
       OPTIONS
       "-DCPPZMQ_BUILD_TESTS=OFF" "-DCATCH_BUILD_EXAMPLES=OFF" 
     )
+    unset(CPPZMQ_BUILD_TESTS CACHE)
+    unset(CATCH_BUILD_EXAMPLES CACHE)
   endif()
     
 

@@ -12,7 +12,7 @@ if(WIN32)
 
     find_library ( ZMQ_LIBRARY
         NAMES libzmq-v143-mt-gd-4_3_6
-        PATHS "C:/Program Files/ZeroMQ/")
+        PATHS "C:/Program Files/ZeroMQ/lib")
 
     find_path ( ZMQ_CMAKE_MODULE_PATH 
         NAMES "ZeroMQConfig.cmake"
