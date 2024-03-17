@@ -14,13 +14,14 @@ auto main(int argc, const char **argv) -> int
 
   // API general babyluigi -[p|s] python or script -[n|--name] <name> -[t|task] <rel location of file> -[d|--dependencies] <list of dependant names> 
 
-  bool python_type, script_type {};
+  jx::task_description task{};
+
+  bool python_type{}, script_type {};
   auto task_type = app.add_option_group("task_subgroup");
   task_type->add_flag("-p,--python", python_type, "Python task type")->ignore_case();
   task_type->add_flag("-s,--script", script_type, "Script task type")->ignore_case();
   task_type->required(true);
 
-  jx::task_description task{};
   app.add_option(
       "-n,--name", task.name,
       "Task name")
@@ -42,22 +43,19 @@ auto main(int argc, const char **argv) -> int
   app.add_option("--server", info.server_address,
        fmt::format("Address to shy guy (default: {})", info.server_address));
 
-
   CLI11_PARSE(app, argc, argv);
-  
 
-    // BabyLuigi flow
+  task.type = (python_type) ? "python" :
+              (script_type) ? "script" : "UNKNOWN";
 
-    // validate command line args 
-  if (not jx::valid(task)) return EXIT_FAILURE;
+  // BabyLuigi flow
+  if (not jx::valid(task)) 
+     return EXIT_FAILURE;
 
-    // connect to shyGuy 
+  task.payload = jx::download_contents(task.file_location);
 
-    // build request (many sub tasks here)
-
-    // send request to handle task
-
-    // receive response and inform user
+  if (not jx::submit_task_request(task,info))
+     return EXIT_FAILURE;
 
     return EXIT_SUCCESS;
 }

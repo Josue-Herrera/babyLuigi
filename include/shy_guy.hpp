@@ -1,7 +1,6 @@
 #pragma once
 
 // *** 3rd Party Includes ***
-#include <asio.hpp>
 #include <spdlog/spdlog.h>
 
 // *** Standard Includes ***
@@ -25,20 +24,16 @@ inline namespace v1 {
 class shy_guy {
 
 public:
-  auto run() noexcept -> void;
+	auto run() noexcept -> void {};
 
-  auto stop() noexcept -> void;
+	auto stop() noexcept -> void {};
 
-  auto wait_for_connection() noexcept -> void;
+	auto wait_for_connection() noexcept -> void {};
 
-  auto read_header(asio::ip::tcp::socket &) noexcept -> void;
-  auto read_body(asio::ip::tcp::socket &, std::size_t) noexcept -> void;
-  auto write_header(asio::ip::tcp::socket&, std::string const&) noexcept -> void;
-  auto write_body(asio::ip::tcp::socket&, std::string const&) noexcept -> void;
+	shy_guy(unsigned port) {};
 
-  shy_guy(unsigned port);
-
-  ~shy_guy();
+	~shy_guy() = default;
+	  ;
 
   shy_guy(shy_guy const &) = delete;
 
@@ -50,11 +45,10 @@ public:
 
 private:
   // context must come first
-  asio::io_context ctx_;
+
   std::thread ctx_thread_;
 
   // handles new connections
-  asio::ip::tcp::acceptor acceptor_;
 
   // task maintainer
   jx::task_maintainer tasks_{};

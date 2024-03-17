@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.27)
+cmake_minimum_required(VERSION 3.22...3.29)
 
 # Only set the cxx_standard if it is not set by someone else
 if (NOT DEFINED CMAKE_CXX_STANDARD)

@@ -6,7 +6,7 @@ auto main(int argc, const char **argv) -> int {
   CLI::App app{fmt::format("{} version {}",
                            "shy guy is baby luigi's task daemon", "0.0.0")};
 
-  unsigned port{9999}, max_task_graphs{1000};
+  unsigned port{90909}, max_task_graphs{1000};
   app.add_option(
       "-p,--port", port,
       fmt::format("Port to listen to baby luigi (default: {})", port));
@@ -16,6 +16,8 @@ auto main(int argc, const char **argv) -> int {
   CLI11_PARSE(app, argc, argv);
 
   jx::shy_guy server(port);
+
+  server.run();
 
   // shyGuy flow
 

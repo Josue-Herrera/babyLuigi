@@ -25,7 +25,7 @@ function(setup_dependencies)
   endif()
 
   if(NOT TARGET Catch2::Catch2WithMain)
-    cpmaddpackage("gh:catchorg/Catch2@3.3.2")
+    cpmaddpackage("gh:catchorg/Catch2@3.3.2") 
   endif()
 
   if(NOT TARGET CLI11::CLI11)
@@ -41,16 +41,22 @@ function(setup_dependencies)
     add_library(json::json ALIAS nlohmann_json)
   endif()
 
-  if(NOT TARGET asio::asio)
-    find_package(Threads REQUIRED)
-    cpmaddpackage("gh:chriskohlhoff/asio#asio-1-28-0@1.28.0")
-    if(asio_ADDED)
-      add_library(asio INTERFACE)
-      add_library(asio::asio ALIAS asio)
-      target_include_directories(asio SYSTEM INTERFACE ${asio_SOURCE_DIR}/asio/include)
-      target_compile_definitions(asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
-      target_link_libraries(asio INTERFACE Threads::Threads)
-    endif()
+  if(NOT TARGET zmq::zmq)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/catch2-src/CMake")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/catch2-src/extras")
+    find_package(ZeroMQ REQUIRED)
+    cpmaddpackage(
+      NAME
+      cppzmq
+      VERSION
+      4.10.0
+      GITHUB_REPOSITORY
+      "zeromq/cppzmq"
+      OPTIONS
+      "-DCPPZMQ_BUILD_TESTS=OFF" "-DCATCH_BUILD_EXAMPLES=OFF" 
+    )
   endif()
+    
 
 endfunction()
