@@ -24,7 +24,7 @@ inline namespace v1 {
 class shy_guy {
 
 public:
-	auto run() noexcept -> void {};
+	auto run() noexcept -> void;
 
 	auto stop() noexcept -> void {};
 
@@ -33,7 +33,6 @@ public:
 	shy_guy(unsigned port) {};
 
 	~shy_guy() = default;
-	  ;
 
   shy_guy(shy_guy const &) = delete;
 

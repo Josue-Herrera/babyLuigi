@@ -1,10 +1,14 @@
 
 
-#include <filesystem>
 #include <baby_luigi.hpp>
-#include <spdlog/spdlog.h>
-#include <fstream>
+
+#include <zmq.hpp>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
+
+#include <fstream>
+#include <filesystem>
+
 
 namespace jx
 {
@@ -12,8 +16,34 @@ namespace jx
     {
         using json = nlohmann::json;
 
+        auto create_request(task_description const& task) noexcept -> zmq::message_t {
+
+            return zmq::message_t { 
+                json::to_bson(
+                    json {
+                        { "name", task.name },
+                        { "type", task.type },
+                        { "payload", task.payload }
+                    }
+                )   
+            };
+        }
+
         auto submit_task_request(task_description const& task,  shy_guy_info const& info) noexcept -> bool 
         {
+            zmq::context_t context(1);
+
+            zmq::socket_t requester(context, zmq::socket_type::req);
+            requester.connect("tcp://localhost:5559");
+
+            requester.send(create_request(task));
+
+            zmq::message_t test{ };
+
+            auto result = requester.recv(test);
+
+            spdlog::info("Received reply [ {} ]", test.to_string_view());
+
             return true;
         }
 
