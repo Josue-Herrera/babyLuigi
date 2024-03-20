@@ -34,7 +34,7 @@ namespace jx
             zmq::context_t context(1);
 
             zmq::socket_t requester(context, zmq::socket_type::req);
-            requester.connect("tcp://localhost:5559");
+            requester.connect("tcp://127.0.0.1:5559");
 
             requester.send(create_request(task));
 
@@ -69,7 +69,9 @@ namespace jx
         {
             if (std::ifstream source_file { path, std::ios::binary }; source_file)
             {
-                return std::vector<char>(std::istreambuf_iterator<char>{source_file}, {});
+                 auto a = std::vector<char>(std::istreambuf_iterator<char>{source_file}, {});
+
+                 return a;
             }
 
             spdlog::error("Unable to correctly open file: {} .", path);
