@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <filesystem>
+#include <range/v3/all.hpp>
 
 
 namespace jx
@@ -42,7 +43,7 @@ namespace jx
 
             auto result = requester.recv(test);
 
-            spdlog::info("Received reply [ {} ]", test.to_string_view());
+            spdlog::info("Received reply [ {} ]", test.to_string());
 
             return true;
         }

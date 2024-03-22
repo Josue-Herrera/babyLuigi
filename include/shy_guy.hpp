@@ -26,22 +26,13 @@ class shy_guy {
 public:
 	auto run() noexcept -> void;
 
-	auto stop() noexcept -> void {};
-
-	auto wait_for_connection() noexcept -> void {};
-
 	shy_guy(unsigned port) {};
 
 	~shy_guy() = default;
-
-  shy_guy(shy_guy const &) = delete;
-
-  shy_guy(shy_guy &&) = delete;
-
-  shy_guy &operator=(shy_guy const &) = delete;
-
-  shy_guy &operator=(shy_guy &&) = delete;
-
+	shy_guy(shy_guy const &) = delete;
+	shy_guy(shy_guy &&) = delete;
+	shy_guy &operator=(shy_guy const &) = delete;
+	shy_guy &operator=(shy_guy &&) = delete;
 private:
   // context must come first
 
