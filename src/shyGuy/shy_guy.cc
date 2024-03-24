@@ -26,13 +26,14 @@ namespace jx {
 
 			zmq::context_t context(1);
 			zmq::socket_t responder(context, zmq::socket_type::rep);
-			responder.bind("tcp://127.0.0.1:5559");
+			responder.bind("tcp://127.0.0.1:" + this->port_);
 			
 			while (true)
 			{
 				// this is a function
 				zmq::message_t request{ };
 				auto result = responder.recv(request);
+				if(!result) continue;
 				json json_req = json::from_bson(request.to_string_view());
 
 				// this is a function		
@@ -59,7 +60,7 @@ namespace jx {
 				spdlog::info("executing {} output {}", filename, aaaa.output);
 			
 				//  Send reply back to client
-				responder.send(zmq::message_t{ "WORLD" });
+				responder.send(zmq::message_t{ "WORLD"s }, zmq::send_flags::none);
 			}
 		};
 

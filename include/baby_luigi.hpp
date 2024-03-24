@@ -18,7 +18,7 @@ namespace jx
 
         struct shy_guy_info
         {
-            unsigned port {90909};
+            std::string port {"90909"};
             std::string server_address{"127.0.0.1"};
         };
 

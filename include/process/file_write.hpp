@@ -11,7 +11,7 @@ inline namespace v1 {
 		try {
 			std::ofstream ofs(filename, std::ios::out | std::ios::binary);
 			if (ofs.is_open()) {
-				ofs.write(contents.data(), contents.size());
+				ofs.write(contents.data(), static_cast<long>(contents.size()));
 				ofs.close();
 			}
 			return ofs.is_open();

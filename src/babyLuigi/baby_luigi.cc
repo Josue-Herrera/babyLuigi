@@ -35,15 +35,14 @@ namespace jx
             zmq::context_t context(1);
 
             zmq::socket_t requester(context, zmq::socket_type::req);
-            requester.connect("tcp://127.0.0.1:5559");
+            requester.connect(info.server_address + ":" + info.port);
 
-            requester.send(create_request(task));
+            requester.send(create_request(task), zmq::send_flags::none);
 
             zmq::message_t test{ };
 
-            auto result = requester.recv(test);
-
-            spdlog::info("Received reply [ {} ]", test.to_string());
+            if (auto result = requester.recv(test); result)
+                spdlog::info("Received reply [ size={} msg={} ]", *result,  test.to_string());
 
             return true;
         }

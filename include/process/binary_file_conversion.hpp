@@ -16,7 +16,7 @@ namespace jx {
     inline namespace v1 {
 
         
-        [[nodiscard]] inline constexpr auto binary_file_conversion(std::string const& input) noexcept -> std::string 
+        [[nodiscard]] inline auto binary_file_conversion(std::string const& input) noexcept -> std::string 
         {
             using namespace ranges;
 

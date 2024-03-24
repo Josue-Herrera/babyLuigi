@@ -13,7 +13,6 @@
 #include <vector>
 
 // *** Project Includes ***
-#include <task.hpp>
 #include <task_system/task_system.hpp>
 #include <task_system/task_maintainer.hpp>
 #include <task_system/task_queue.hpp>
@@ -47,7 +46,7 @@ class shy_guy {
 public:
 	auto run() noexcept -> void;
 
-	shy_guy(unsigned port) {};
+	explicit shy_guy(std::string port) : port_{port}{};
 
 	~shy_guy() = default;
 	shy_guy(shy_guy const &) = delete;
@@ -56,7 +55,7 @@ public:
 	shy_guy &operator=(shy_guy &&) = delete;
 private:
   // context must come first
-
+	std::string port_{};
   std::thread ctx_thread_;
 
   // handles new connections

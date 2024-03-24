@@ -30,13 +30,26 @@ if(WIN32)
         unset(_IMPORT_PREFIX CACHE)
 
 else()
-    find_path ( ZMQ_INCLUDE_DIR
+    find_path ( ZMQ_INCLUDE_DIR 
         NAMES "zmq.h"
-        PATHS /opt/homebrew/Cellar/zeromq/4.3.5_1/)
+        PATHS ~/libzmq/include/)
 
     find_library ( ZMQ_LIBRARY 
-        NAMES libzmq 
-        PATHS /opt/homebrew/Cellar/zeromq/4.3.5_1/)
+        NAMES libzmq.a
+        PATHS ~/libzmq/build/lib/) 
+
+    find_path ( ZMQ_CMAKE_MODULE_PATH 
+        NAMES "ZeroMQConfig.cmake"
+        PATHS ~/libzmq/build/)
+
+        list(APPEND CMAKE_MODULE_PATH ${ZMQ_CMAKE_MODULE_PATH})
+        set(_IMPORT_PREFIX  ~/libzmq/build/ CACHE STRING "IMPORT FOR ZTARGS")
+
+        include(${ZMQ_CMAKE_MODULE_PATH}/ZeroMQConfig.cmake)
+        include(${ZMQ_CMAKE_MODULE_PATH}/ZeroMQConfigVersion.cmake)
+        include(${ZMQ_CMAKE_MODULE_PATH}/ZeroMQTargets.cmake)
+
+        unset(_IMPORT_PREFIX CACHE)
 endif()
 
 set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
