@@ -17,10 +17,31 @@
 #include <task_system/task_system.hpp>
 #include <task_system/task_maintainer.hpp>
 #include <task_system/task_queue.hpp>
+#include <fstream>
+#include <process/binary_file_conversion.hpp>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+inline void test_json(std::string const& a) {
+	json s = json::parse(a);
+
+	auto ab = s["payload"]
+		| ranges::views::transform([](auto const& i) { return  i.template get<char>(); })
+		| ranges::to<std::string>();
+
+	spdlog::info("{}", ab);
+
+	for (auto const& i : s["payload"])
+	{
+		spdlog::info("{}", i.template get<char>());
+	}
+}
+
+
 
 namespace jx {
 inline namespace v1 {
-
+	
 class shy_guy {
 
 public:

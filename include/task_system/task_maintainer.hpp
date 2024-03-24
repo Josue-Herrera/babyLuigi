@@ -18,7 +18,7 @@ namespace jx
             std::shared_ptr<task_queue<respose_reason>> response_queue{};
         };
   
-        class task_maintainer : task_system {
+        class task_maintainer : public task_system {
         public:
             using task_map = std::unordered_map<std::string, std::vector<std::string>>;
 

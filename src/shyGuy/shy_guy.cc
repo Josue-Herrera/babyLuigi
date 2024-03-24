@@ -35,9 +35,10 @@ namespace jx {
 				auto result = responder.recv(request);
 				json json_req = json::from_bson(request.to_string_view());
 
-				// this is a function
+				// this is a function		
 				auto lol = json_req["payload"].array();
 				auto payload = jx::binary_file_conversion(json_req["payload"].dump());
+				
 				
 				// this is a function
 				auto name = json_req["name"].dump();
