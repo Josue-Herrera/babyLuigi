@@ -20,23 +20,6 @@
 #include <process/binary_file_conversion.hpp>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-inline void test_json(std::string const& a) {
-	json s = json::parse(a);
-
-	auto ab = s["payload"]
-		| ranges::views::transform([](auto const& i) { return  i.template get<char>(); })
-		| ranges::to<std::string>();
-
-	spdlog::info("{}", ab);
-
-	for (auto const& i : s["payload"])
-	{
-		spdlog::info("{}", i.template get<char>());
-	}
-}
-
-
 
 namespace jx {
 inline namespace v1 {
@@ -45,6 +28,7 @@ class shy_guy {
 
 public:
 	auto run() noexcept -> void;
+  auto test_run() noexcept -> void;
 
 	explicit shy_guy(std::string port) : port_{port}{};
 
@@ -54,6 +38,8 @@ public:
 	shy_guy &operator=(shy_guy const &) = delete;
 	shy_guy &operator=(shy_guy &&) = delete;
 private:
+  void process_json(nlohmann::json const& json_req);
+
   // context must come first
 	std::string port_{};
   std::thread ctx_thread_;

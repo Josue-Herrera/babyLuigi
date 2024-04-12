@@ -2,7 +2,11 @@
 #include <fmt/format.h>
 #include <shy_guy.hpp>
 
+
 auto main(int argc, const char** argv) -> int {
+
+    using namespace std::string_literals;
+
     CLI::App app{ fmt::format("{} version {}",
                              "shy guy is baby luigi's task daemon", "0.0.0") };
 
@@ -18,7 +22,7 @@ auto main(int argc, const char** argv) -> int {
 
     jx::shy_guy server(port);
 
-    test_json("{ \"payload\" : [100,101,102] }");
+    server.test_run();
 
   //server.run();
 

@@ -14,7 +14,7 @@ auto main(int argc, const char **argv) -> int
 
   // API general babyluigi -[p|s] python or script -[n|--name] <name> -[t|task] <rel location of file> -[d|--dependencies] <list of dependant names> 
 
-  jx::task_description task{};
+  jx::task t{};
 
   bool python_type{}, script_type {};
   auto task_type = app.add_option_group("task_subgroup");
@@ -23,17 +23,19 @@ auto main(int argc, const char **argv) -> int
   task_type->required(true);
 
   app.add_option(
-      "-n,--name", task.name,
+      "-n,--name", t.name,
       "Task name")
        ->required();
 
+ std::string file_location{};
   app.add_option(
-      "-t,--task", task.file_location,
+      "-t,--task", file_location,
       "Relative location of task location")
        ->required();
 
+  std::vector<std::string> dependency_names{};
   app.add_option(
-      "-d,--dependencies", task.dependency_names,
+      "-d,--dependencies", dependency_names,
       "List of dependent names for the task");
 
   jx::shy_guy_info info{};
@@ -45,16 +47,18 @@ auto main(int argc, const char **argv) -> int
 
   CLI11_PARSE(app, argc, argv);
 
-  task.type = (python_type) ? "python" :
-              (script_type) ? "script" : "UNKNOWN";
+  t.type = (python_type) ? "python" : (script_type) ? "script" : "UNKNOWN";
+
+  t.filename.emplace(file_location);
+  t.dependency_names.emplace(dependency_names);
 
   // BabyLuigi flow
-  if (not jx::valid(task)) 
+  if (not jx::valid(t)) 
      return EXIT_FAILURE;
 
-  task.payload = jx::download_contents(task.file_location);
+  t.file_content = jx::download_contents(t.filename.value());
 
-  if (not jx::submit_task_request(task,info))
+  if (not jx::submit_task_request(t, info))
      return EXIT_FAILURE;
 
     return EXIT_SUCCESS;

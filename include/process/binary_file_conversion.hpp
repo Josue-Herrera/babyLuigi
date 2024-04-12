@@ -1,6 +1,7 @@
 #pragma once 
 
 // 3rdparty Inc
+#include <nlohmann/json.hpp>
 #include <range/v3/view/drop_while.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/split.hpp>
@@ -16,21 +17,11 @@ namespace jx {
     inline namespace v1 {
 
         
-        [[nodiscard]] inline auto binary_file_conversion(std::string const& input) noexcept -> std::string 
+        [[nodiscard]] inline auto binary_file_conversion(nlohmann::json const& input, std::string const&where ) noexcept -> std::string 
         {
-            using namespace ranges;
-
-            auto to_characters = [](auto splitted_view)
-            {
-                auto bytes = splitted_view | views::common | to<std::string>();
-                return static_cast<char>(std::stoi(bytes));
-            };
-
-            auto file = input
-                | views::drop_while([](char c) { return c == '[' || c == ']'; })
-                | views::split(',')
-                | views::transform(to_characters)
-                | to<std::string>();
+            auto file = input[where]
+                | ranges::views::transform([](auto const& i) { return  i.template get<char>(); })
+                | ranges::to<std::string>();
 
             return file;
         }

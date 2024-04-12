@@ -17,28 +17,18 @@ namespace jx
     {
         using json = nlohmann::json;
 
-        auto create_request(task_description const& task) noexcept -> zmq::message_t {
+        auto create_request(task const& task) noexcept -> zmq::message_t {
 
-            return zmq::message_t { 
-                json::to_bson(
-                    json {
-                        { "name", task.name },
-                        { "type", task.type },
-                        { "payload", task.payload }
-                    }
-                )   
-            };
+            return zmq::message_t { json::to_bson(task) };
         }
 
-        auto submit_task_request(task_description const& task,  shy_guy_info const& info) noexcept -> bool 
+        auto submit_task_request(task const& task,  shy_guy_info const& info) noexcept -> bool 
         {
             zmq::context_t context(1);
 
             zmq::socket_t requester(context, zmq::socket_type::req);
             requester.connect(info.server_address + ":" + info.port);
-
             requester.send(create_request(task), zmq::send_flags::none);
-
             zmq::message_t test{ };
 
             if (auto result = requester.recv(test); result)
@@ -47,35 +37,34 @@ namespace jx
             return true;
         }
 
-        auto valid(task_description const& task) noexcept -> bool
+        auto valid(task const& task) noexcept -> bool
         {
-            std::filesystem::path file_path(task.file_location);
-            if (not std::filesystem::exists(file_path))
+            if(task.filename)
             {
-                spdlog::error("File does not exist: {}", task.file_location);
-                return false;
-            }
+                std::filesystem::path file_path(*task.filename);
+                if (not std::filesystem::exists(file_path))
+                {
+                    spdlog::error("File does not exist: {}", *task.filename);
+                    return false;
+                }
 
-            if(not std::filesystem::is_regular_file(file_path))
-            {
-                spdlog::error("This is not a regular file: {}", task.file_location);
-                return false;
+                if(not std::filesystem::is_regular_file(file_path))
+                {
+                    spdlog::error("This is not a regular file: {}", *task.filename);
+                    return false;
+                }
             }
-
             return true;
         }
 
-        auto download_contents(std::string const& path) noexcept -> std::vector<char>
+        auto download_contents(std::string const& path) noexcept -> std::string
         {
             if (std::ifstream source_file { path, std::ios::binary }; source_file)
             {
-                 auto a = std::vector<char>(std::istreambuf_iterator<char>{source_file}, {});
-
-                 return a;
+                return std::string (std::istreambuf_iterator<char>{source_file}, {});
             }
 
             spdlog::error("Unable to correctly open file: {} .", path);
-
             return {};
         }
     } // namespace v1    
