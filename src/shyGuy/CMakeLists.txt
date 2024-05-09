@@ -28,6 +28,7 @@ target_link_system_libraries(
     spdlog::spdlog
     range-v3::range-v3
     json::json
+    tl::expected
     libzmq-static
     cppzmq-static
 )

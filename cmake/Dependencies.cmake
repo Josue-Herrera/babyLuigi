@@ -60,6 +60,10 @@ function(setup_dependencies)
     unset(CPPZMQ_BUILD_TESTS CACHE)
     unset(CATCH_BUILD_EXAMPLES CACHE)
   endif()
+
+  if(NOT TARGET tl::expected)
+    cpmaddpackage("gh:TartanLlama/expected@1.1.0")
+  endif()
     
 
 endfunction()

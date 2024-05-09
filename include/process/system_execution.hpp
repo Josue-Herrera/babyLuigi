@@ -41,7 +41,7 @@ namespace jx
          */
         inline auto execute(std::string const& command) noexcept -> system_result
         {
-            std::array<char, 100000> buffer{};
+            std::array<char, 10000> buffer{};
 
             std::FILE* pipe = popen(command.c_str(), "r");
 

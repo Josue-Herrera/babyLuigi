@@ -69,6 +69,10 @@ namespace jx
             std::optional<std::string> file_content{};
             std::optional<std::vector<std::string>> dependency_names{};       
         };
+
+        inline auto has_dependencies(task const& t) -> bool {
+            return t.dependency_names.has_value() and not t.dependency_names.value().empty();
+        }
         
         NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(task, name, type, filename, file_content, dependency_names)
     } // namespace v1
