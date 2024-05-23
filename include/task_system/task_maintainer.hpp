@@ -15,7 +15,7 @@ namespace jx
 
             respose_reason response{};
 
-            std::shared_ptr<task_queue<respose_reason>> response_queue{};
+            std::shared_ptr<blocking_queue<respose_reason>> response_queue{};
         };
   
         class task_maintainer : public task_system {

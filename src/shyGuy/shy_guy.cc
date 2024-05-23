@@ -17,7 +17,6 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
-#include <algorithm>
 #include <unordered_map>
 
 namespace jx {
@@ -25,7 +24,7 @@ namespace jx {
 		using namespace std::string_literals;		
 		using json = nlohmann::json; 
 
-		template<class Request, class Reply> class channel {
+		template<class Request, class Reply> class bchannel {
 		public:
 	
 			[[nodiscard]] auto wait_for_reply() noexcept -> Reply {
@@ -46,8 +45,35 @@ namespace jx {
 			}
 
 		private:
-			task_queue<Request> request{};
-			task_queue<Reply>   reply{};
+			blocking_queue<Request> request{};
+			blocking_queue<Reply>   reply{};
+		};
+
+
+		template<class Request, class Reply, template<class> class Queue = blocking_queue>
+		class channel {
+		public:
+
+			[[nodiscard]] auto recv_reply() noexcept {
+				return reply.dequeue();
+			}
+
+			[[nodiscard]] auto recv_request() noexcept  {
+				return request.dequeue();
+			}
+
+			auto send_request(Request const& req) noexcept {
+				request.enqueue(req);
+			}
+
+
+			auto send_reply(Reply const& rep) noexcept {
+				reply.enqueue(rep);
+			}
+
+		private:
+			Queue<Request> request{};
+			Queue<Reply>   reply{};
 		};
 
 
@@ -62,7 +88,7 @@ namespace jx {
 
 			[[nodiscard]] auto run_session() noexcept -> json {
 				this->graph_channel.send_request(request);
-				return this->graph_channel.wait_for_reply();
+				return this->graph_channel.recv_reply();
 			}
 		private:
 			channel<task, json>& graph_channel;
@@ -72,11 +98,18 @@ namespace jx {
 		class task_processor : task_system {
 
 			using directed_graphs_map = std::unordered_map<std::string, std::string>;
-			using root_graphs_map     = std::unordered_map<std::string, directed_graphs_map>;
+			using root_graphs_map = std::unordered_map<std::string, directed_graphs_map>;
 			using root_dependency_map = std::unordered_map<std::string, std::vector<std::string>>;
-
-			enum class graph_error { dependencies_not_found, constains_duplicates, task_creates_cycle };
-			enum class graph_color { white, gray, black };
+			enum class graph_error { not_set, dependencies_not_found, constains_duplicates, task_creates_cycle };
+			[[nodiscard]] auto to_cstring(graph_error const error) noexcept {
+				switch (error) {
+				case graph_error::not_set: return "not_set";
+				case graph_error::dependencies_not_found: return "dependencies_not_found";
+				case graph_error::constains_duplicates: return "constains_duplicates";
+				case graph_error::task_creates_cycle: return "task_creates_cycle";
+				default: return "unknown";
+				}
+			}
 
 		public:
 			
@@ -84,31 +117,59 @@ namespace jx {
 				return this->graph_channel;
 			}
 
+			
 			auto run(void) -> void {
-				while (true) {
-					const auto request = graph_channel.wait_for_request();
-	
-					if (has_dependencies(request)) {
-						const auto root = find_root_task(request);
-
-						
-					}
-					else {
-						root_dependancies.emplace(request.name, std::vector<std::string>{});
-
-						// run root task async()
-					}
-				}
+				async([this] { handle_sessions(); });
+				async([this] { handle_tasks(); });
 			}
 
 		private:
 
-			auto find_root_task(jx::task const& request) -> tl::expected<std::string, graph_error> {
+
+			auto handle_tasks() -> void {
+				while (true) {
+					if (const auto request{ task_channel.recv_request() }; request) {
+
+					}
+
+				}
+				
+			}
+
+			auto handle_sessions() -> void {
+
+				while (true) {
+					const auto request{ graph_channel.recv_request() };
+
+					if (not has_dependencies(request)) {
+						root_dependancies.emplace(request.name, std::vector<std::string>{});
+						task_channel.send_request(request);
+
+						continue;
+					}
+
+
+					if (const auto root { find_valid_root_task(request) }; root.has_value()) {
+						const auto tasks { root_dependancies.find(root.value())};
+
+					}
+					else spdlog::error("finding root task error: {}", to_cstring(root.error()));
+				}
+			}
+
+
+			enum class graph_color { white, gray, black };
+
+			auto has_cycle(std::string const& root, std::string const& name) -> bool {
+				return false;
+			}
+
+
+			auto find_valid_root_task(jx::task const& request) -> tl::expected<std::string, graph_error> {
+
 				for (auto& [root, tasks] : root_dependancies) {
 
-					auto found = std::find_first_of(tasks.begin(), tasks.end(),
-						request.dependency_names.value().begin(),
-						request.dependency_names.value().end());
+					auto found { ranges::find_first_of(tasks, request.dependency_names.value()) };
 
 					if (found != tasks.end()) {
 
@@ -117,24 +178,17 @@ namespace jx {
 
 						if (ranges::contains(tasks, request.name)) // task already exists
 							return tl::unexpected(graph_error::constains_duplicates);
-						
-						return { *found };
 
-						break;
+						return { root };
 					}
 				}
+
 				return tl::unexpected(graph_error::dependencies_not_found);
 			}
 
-			auto has_cycle(std::string const& root, std::string const& name) -> bool { 
-			
-				return false; 
-			
-			}
-
-
 			root_graphs_map     graphs{};
 			channel<task, json> graph_channel{};
+			channel<task, json, nonblocking_queue> task_channel{};
 			root_dependency_map root_dependancies{};
 		};
 

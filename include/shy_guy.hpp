@@ -28,7 +28,7 @@ class shy_guy {
 
 public:
 	auto run() noexcept -> void;
-  auto test_run() noexcept -> void;
+	auto test_run() noexcept -> void;
 
 	explicit shy_guy(std::string port) : port_{port}{};
 
@@ -41,14 +41,14 @@ private:
   void process_json(nlohmann::json const& json_req);
 
   // context must come first
-	std::string port_{};
+  std::string port_{};
   std::thread ctx_thread_;
 
   // handles new connections
 
   // task maintainer
   jx::task_maintainer tasks_{};
-  jx::task_queue<task_view> task_queue_{};
+  jx::blocking_queue<task_view> task_queue_{};
   std::thread graph_thread_;
 
   std::atomic_bool terminate_{};
