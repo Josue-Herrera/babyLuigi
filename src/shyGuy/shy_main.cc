@@ -18,26 +18,16 @@ auto main(int argc, const char** argv) -> int {
     app.add_option(
         "-m,--max-graphs", max_task_graphs,
         fmt::format("Max number of task graphs (default: {})", max_task_graphs));
+
+    // add optional config path and have a default path (default could be pound define
     CLI11_PARSE(app, argc, argv);
 
     jx::shy_guy server(port);
-
-    server.test_run();
-
-  //server.run();
-
-  // shyGuy flow
-
-  // [x] todo: validate command line args
-
-  // async (asio)
-  // [ ] todo: wait for connections from babyLuigi
-
-  // [ ] todo: wait for request
-
-  // [ ] todo: try and service the request (many sub tasks here)
-
-  // [ ] todo: send response to request
-
-  return 0;
+    
+    try { 
+        server.test_run(); 
+    }
+    catch (...) {
+        return EXIT_FAILURE;
+    }
 }

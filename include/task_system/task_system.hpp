@@ -33,6 +33,9 @@ class notification_queue
 
 public: 
 
+	notification_queue() = default;
+	notification_queue(notification_queue const&) = delete;
+
 	// Attempt to pop something but if the qu is empty or if its busy it will return false.
 	[[nodiscard]] auto try_pop(function_capture_t& func) -> bool
     {
@@ -131,7 +134,10 @@ class task_system
 
 
 public:
-
+	task_system() = default; 
+	task_system(task_system&&) = default;
+	task_system(task_system const&) = delete;
+	
 	explicit task_system (unsigned k = 48)
 		: k_bound{ k } 
     {

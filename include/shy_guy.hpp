@@ -47,10 +47,11 @@ private:
   // handles new connections
 
   // task maintainer
-  jx::task_maintainer tasks_{};
-  jx::blocking_queue<task_view> task_queue_{};
+  jx::task_maintainer_type tasks_{};
   std::thread graph_thread_;
 
+
+  std::vector<std::thread> task_runners{};
   std::atomic_bool terminate_{};
 };
 
