@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <tl/expected.hpp>
 #include <task.hpp>
 #include <vector>
 #include <algorithm>
@@ -27,14 +26,18 @@ namespace jx
 
         enum class graph_color { white, gray, black };
 
-        enum class graph_error { not_set, dependencies_not_found, constains_duplicates, task_creates_cycle };
+        enum class graph_error { no_error, dependencies_not_found, constains_duplicates, task_creates_cycle };
+        
+        constexpr auto check(graph_error error) noexcept -> bool {
+            return error != graph_error::no_error;
+        }
 
         [[nodiscard]] inline auto to_cstring(graph_error const error) noexcept {
             switch (error) {
-            case graph_error::not_set: return "not_set";
-            case graph_error::dependencies_not_found: return "dependencies_not_found";
-            case graph_error::constains_duplicates: return "constains_duplicates";
-            case graph_error::task_creates_cycle: return "task_creates_cycle";
+            case graph_error::no_error: return "no error";
+            case graph_error::dependencies_not_found: return "dependencies not found";
+            case graph_error::constains_duplicates: return "constains duplicates";
+            case graph_error::task_creates_cycle: return "task creates cycle";
             default: return "unknown";
             }
         }
@@ -60,7 +63,7 @@ namespace jx
             auto root_view() const noexcept -> std::string_view {
                 return root_name_;
             }
-            auto dependencies_of(std::string const& name) const noexcept -> auto const& { 
+            auto dependencies_of(std::string const& name) const -> auto const& { 
                 return adjacency_list.at(name);   
             }
 
@@ -87,14 +90,23 @@ namespace jx
                     return graph_error::task_creates_cycle;
                 }
 
-                return graph_error::not_set;
+                return graph_error::no_error;
             }
 
             // inline auto remove_task ()
 
         private:
 
-            inline bool hasCycleDFS(color_map_type& visited, std::string const& node) const {
+
+            /// <summary>
+            /// This function computes the run order of a given set of task and their dependencies; 
+            /// </summary>
+            /// <returns>idk</returns>
+            auto compute_run_order() {
+
+            }
+
+            inline bool depth_first_search(color_map_type& visited, std::string const& node) const {
                 visited[node] = graph_color::gray;
                
                 for (auto const& neighbor : adjacency_list.at(node)) {
@@ -102,7 +114,7 @@ namespace jx
                         return true;
                     }
                     else if (visited[neighbor] == graph_color::white) {
-                        if (hasCycleDFS(visited, neighbor)) {
+                        if (depth_first_search(visited, neighbor)) {
                             return true;
                         }
                     }
@@ -115,13 +127,13 @@ namespace jx
             inline auto has_cycle() const -> bool {
                 color_map_type visited{};
 
-                for (const auto& [name, dependencies] : adjacency_list) {
-                    visited.emplace(name, graph_color::white);
+                for (const auto& entry : adjacency_list) {
+                    visited.emplace(entry.first, graph_color::white);
                 }
 
                 for (const auto& entry : adjacency_list) {
                     if (visited[entry.first] == graph_color::white) {
-                        if (hasCycleDFS(visited, entry.first)) {
+                        if (depth_first_search(visited, entry.first)) {
                             return true;
                         }
                     }
@@ -130,7 +142,7 @@ namespace jx
                 return false;
             }
 
-            auto find_valid_root_task(jx::task const& request) -> tl::expected<std::string, graph_error> {
+            auto find_valid_root_task(jx::task const& request) {
 
                 //for (auto& [root, tasks] : root_dependancies) {
 
@@ -148,7 +160,7 @@ namespace jx
                 //    }
                 //}
 
-                return tl::unexpected(graph_error::dependencies_not_found);
+                return 0;
             }
 
 
