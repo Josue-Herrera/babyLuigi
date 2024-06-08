@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <varaint>
 #include <chrono>
 
 #include "task.hpp"
@@ -125,6 +126,13 @@ namespace jx
 
 
             std::vector<graph_runner_type> task_runners{};
+        };
+
+
+        class schedule {
+            enum class occurrence { monthly, weekly, daily, hourly };
+            
+
         };
 
 
