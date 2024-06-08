@@ -81,7 +81,7 @@ namespace jx
                 }
 
                 friend auto operator<=>(implementation_type const& lhs, implementation_type const& rhs) {
-                    return lhs.id_ <=> rhs.id_;
+                    return std::tuple {lhs.id_} <=> std::tuple {rhs.id_};
                 }
                 
                 
@@ -104,15 +104,15 @@ namespace jx
                     std::forward<task>(root_task)
                 }
             {
-                runner_ = std::jthread{ [&]() mutable { impl_.run(context); } };
+                runner_ = std::thread{ [&]() mutable { impl_.run(context); } };
             }
 
             friend auto operator<=>(graph_runner_type const& lhs, graph_runner_type const& rhs) {
-                return lhs.impl_.id_ <=> rhs.impl_.id_;
+                return std::tuple {lhs.impl_.id_}<=> std::tuple {rhs.impl_.id_};
             }
             
         private:    
-            std::jthread runner_;
+            std::thread runner_;
         };
 
         class task_maintainer_type {

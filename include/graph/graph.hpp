@@ -160,7 +160,7 @@ namespace jx
                 //    }
                 //}
 
-                return 0;
+                return request.name.size();
             }
 
 

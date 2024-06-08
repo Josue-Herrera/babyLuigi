@@ -98,7 +98,7 @@ namespace jx {
 			};
 			auto reply_to_task = [&](auto& pack) mutable noexcept {
 				try {
-					return zmq::send_multipart(responder, pack.data());
+					return zmq::send_multipart(responder, pack);
 				}
 				catch (std::runtime_error const& error) {
 					spdlog::error("failed to recv message : {} ", error.what());
@@ -126,7 +126,7 @@ namespace jx {
 						
 						// start task graph runner 
 						// graph runner { .id=(ZMQ_FILTER), .name=(root name?), .dag=(task_graph)  .directory=(directory), .tasks={task} };
-					
+
 						continue;
 					}
 
@@ -151,7 +151,7 @@ namespace jx {
 			
 				
 				//  Send reply back to client
-				
+				reply_to_task(message_pack);
 			}
 		};
 

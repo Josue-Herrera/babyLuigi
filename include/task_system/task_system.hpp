@@ -134,9 +134,7 @@ class task_system
 
 
 public:
-	task_system() = default; 
-	task_system(task_system&&) = default;
-	task_system(task_system const&) = delete;
+	task_system() = default;
 	
 	explicit task_system (unsigned k = 48)
 		: k_bound{ k } 
