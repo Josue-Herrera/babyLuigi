@@ -1,14 +1,18 @@
 
+// *** Project Includes ***
+#include "baby_luigi.hpp"
+
+// *** 3rd Party Includes ***
 #include <CLI/CLI.hpp>
 #include <fmt/format.h>
 #include <fmt/core.h>
 #include <spdlog/spdlog.h>
-#include <baby_luigi.hpp>
+
+// *** Standard Includes ***
 #include <string>
 #include <vector>
 
-
-auto main(int argc, const char **argv) -> int
+auto main(int const argc, const char **argv) -> int
 {  
   CLI::App app{fmt::format("{}\nversion {}", jx::baby_luigi_banner, "0.0.0")}; 
 

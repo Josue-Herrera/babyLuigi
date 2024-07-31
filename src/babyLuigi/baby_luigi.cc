@@ -1,15 +1,15 @@
 
+// *** Project Includes ***
+#include "baby_luigi.hpp"
 
-#include <baby_luigi.hpp>
-
+// *** 3rd Party Includes ***
 #include <zmq.hpp>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
+// *** Standard Includes ***
 #include <fstream>
 #include <filesystem>
-#include <range/v3/all.hpp>
-
 
 namespace jx
 {

@@ -1,6 +1,9 @@
+// *** Project Includes ***
+#include "shy_guy.hpp"
+
+// *** 3rd Party Includes ***
 #include <CLI/CLI.hpp>
 #include <fmt/format.h>
-#include <shy_guy.hpp>
 
 
 auto main(int argc, const char** argv) -> int {

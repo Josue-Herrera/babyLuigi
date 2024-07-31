@@ -1,16 +1,20 @@
 #pragma once
 
-#include <filesystem>
-#include <varaint>
-#include <chrono>
-
+// *** Project Includes ***
 #include "task.hpp"
-#include "task_system.hpp"
+#include "scheduler.hpp"
+#include "task_system/task_system.hpp"
 #include "graph/graph.hpp"
 
+// *** 3rd Party Includes ***
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
+
+// *** Standard Includes ***
+#include <filesystem>
+#include <variant>
 
 namespace jx 
 {
@@ -19,7 +23,6 @@ namespace jx
         using json = nlohmann::json;
         enum class respose_reason { not_set, revoking, completing };
 
-        
         class graph_runner_type
         {
         public: 
@@ -98,7 +101,7 @@ namespace jx
 
             graph_runner_type(zmq::context_t& context, id_type id, std::string&& name, graph_type&& graph, directory_type&& directory, task&& root_task) noexcept
                 : impl_ {
-                    id, 
+                    std::forward<id_type>(id),
                     std::forward<std::string>(name), 
                     std::forward<graph_type>(graph),
                     std::forward<directory_type>(directory),
@@ -109,7 +112,7 @@ namespace jx
             }
 
             friend auto operator<=>(graph_runner_type const& lhs, graph_runner_type const& rhs) {
-                return std::tuple {lhs.impl_.id_}<=> std::tuple {rhs.impl_.id_};
+                return std::tuple {lhs.impl_.id_} <=> std::tuple {rhs.impl_.id_};
             }
             
         private:    
@@ -117,24 +120,11 @@ namespace jx
         };
 
         class task_maintainer_type {
-        public:
         
         
         private:
-
-
-
-
             std::vector<graph_runner_type> task_runners{};
         };
-
-
-        class schedule {
-            enum class occurrence { monthly, weekly, daily, hourly };
-            
-
-        };
-
 
     } // namespace v1
 } // namespace jx

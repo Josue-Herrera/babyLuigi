@@ -1,25 +1,16 @@
 #pragma once
 
+// *** Project Includes ***
+#include "task_maintainer.hpp"
+
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
-
-// *** Standard Includes ***
-#include <condition_variable>
-#include <mutex>
-#include <queue>
-#include <string>
-#include <thread>
-#include <unordered_map>
-#include <vector>
-
-// *** Project Includes ***
-#include <task_system/task_system.hpp>
-#include <task_system/task_maintainer.hpp>
-#include <task_system/task_queue.hpp>
-#include <fstream>
-#include <process/binary_file_conversion.hpp>
 #include <nlohmann/json.hpp>
 
+// *** Standard Includes ***
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace jx {
 inline namespace v1 {
