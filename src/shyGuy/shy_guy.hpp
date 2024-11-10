@@ -12,7 +12,7 @@
 #include <thread>
 #include <vector>
 
-namespace jx {
+namespace cosmos {
 inline namespace v1 {
 	
 class shy_guy {
@@ -21,7 +21,7 @@ public:
 	auto run() noexcept -> void;
 	auto test_run() noexcept -> void;
 
-	explicit shy_guy(std::string port) : port_{port}{};
+	explicit shy_guy(std::string port) : port_{std::move(port)}{};
 
 	~shy_guy() = default;
 	shy_guy(shy_guy const &) = delete;
@@ -38,7 +38,7 @@ private:
   // handles new connections
 
   // task maintainer
-  jx::task_maintainer_type tasks_{};
+  cosmos::task_maintainer_type tasks_{};
   std::thread graph_thread_;
 
 
@@ -47,4 +47,4 @@ private:
 };
 
 } // namespace v1
-} // namespace jx
+} // namespace cosmos

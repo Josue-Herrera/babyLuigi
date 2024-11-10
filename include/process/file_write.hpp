@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string>
 
-namespace jx {
+namespace cosmos {
 inline namespace v1 {
 
 	inline auto write_to_file(std::string const& filename, std::string const& contents) noexcept -> bool

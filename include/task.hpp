@@ -30,50 +30,49 @@ namespace nlohmann {
 }
 
 
-namespace jx 
+
+namespace cosmos::inline v1
 {
-    inline namespace v1
-    {   
-        enum class task_type { unset, python, shell, placeholder, unknown };
+    enum class task_type { unset, python, shell, placeholder, unknown };
 
-        inline std::string to_string(task_type type) {
+    inline std::string to_string(task_type type) {
+        using namespace std::string_literals;
+
+        switch (type) {
+            case task_type::python      : return "python"s;
+            case task_type::shell       : return "shell"s;
+            case task_type::placeholder : return "placeholder"s;
+            case task_type::unset       : return "unset"s;
+            case task_type::unknown     : return "unknown"s;
+            default : return "unknown"s;
+        }
+    }
+
+    inline task_type to_enum(std::string const& str) {
             using namespace std::string_literals;
+            if (str ==  "python"s) return task_type::python;
+            if (str ==  "shell"s) return task_type::shell;
+            if (str ==  "placeholder"s)  return task_type::placeholder;
+            if (str ==  "unset"s)  return task_type::unset;
+            return task_type::unknown;
+    }
 
-            switch (type) {
-                case task_type::python      : return "python"s;
-                case task_type::shell       : return "shell"s;
-                case task_type::placeholder : return "placeholder"s;
-                case task_type::unset       : return "unset"s;
-                case task_type::unknown     : return "unknown"s;
-                default : return "unknown"s;
-            }
-        }
+    class task
+    {
+    public:
+        //uuid
+        std::string name{};
+        std::string type{};
 
-        inline task_type to_enum(std::string const& str) {
-                using namespace std::string_literals;
-                if (str ==  "python"s) return task_type::python;
-                if (str ==  "shell"s) return task_type::shell;
-                if (str ==  "placeholder"s)  return task_type::placeholder;
-                if (str ==  "unset"s)  return task_type::unset;
-                return task_type::unknown;
-        }
+        std::optional<std::string> filename{};
+        std::optional<std::string> file_content{};
+        std::optional<std::vector<std::string>> dependency_names{};
+    };
 
-        class task
-        {
-        public:
-            //uuid
-            std::string name{};
-            std::string type{};
+    inline auto has_dependencies(task const& t) -> bool {
+        return t.dependency_names.has_value() and not t.dependency_names.value().empty();
+    }
 
-            std::optional<std::string> filename{};
-            std::optional<std::string> file_content{};
-            std::optional<std::vector<std::string>> dependency_names{};       
-        };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(task, name, type, filename, file_content, dependency_names)
+} // namespace cosmos::inline v1
 
-        inline auto has_dependencies(task const& t) -> bool {
-            return t.dependency_names.has_value() and not t.dependency_names.value().empty();
-        }
-        
-        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(task, name, type, filename, file_content, dependency_names)
-    } // namespace v1
-} // namespace jx

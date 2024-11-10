@@ -13,12 +13,12 @@
 #include <vector>
 
 auto main(int const argc, const char **argv) -> int
-{  
-  CLI::App app{fmt::format("{}\nversion {}", jx::baby_luigi_banner, "0.0.0")}; 
+{
+  CLI::App app{fmt::format("{}\nversion {}", cosmos::baby_luigi_banner, "0.0.0")};
 
-  // API general babyluigi -[p|s] python or script -[n|--name] <name> -[t|task] <rel location of file> -[d|--dependencies] <list of dependant names> 
+  // API general babyluigi -[p|s] python or script -[n|--name] <name> -[t|task] <rel location of file> -[d|--dependencies] <list of dependant names>
 
-  jx::task t{};
+  cosmos::task t{};
 
   bool python_type{}, script_type {};
   auto task_type = app.add_option_group("task_subgroup");
@@ -42,10 +42,10 @@ auto main(int const argc, const char **argv) -> int
       "-d,--dependencies", dependency_names,
       "List of dependent names for the task");
 
-  jx::shy_guy_info info{};
-  app.add_option("--port", info.port, 
+  cosmos::shy_guy_info info{};
+  app.add_option("--port", info.port,
        fmt::format("Port to listen to shy guy (default: {})", info.port));
-  
+
   app.add_option("--server", info.server_address,
        fmt::format("Address to shy guy (default: {})", info.server_address));
 
@@ -57,12 +57,12 @@ auto main(int const argc, const char **argv) -> int
   t.dependency_names.emplace(dependency_names);
 
   // BabyLuigi flow
-  if (not jx::valid(t)) 
+  if (not cosmos::valid(t))
      return EXIT_FAILURE;
 
-  t.file_content = jx::download_contents(t.filename.value());
+  t.file_content = cosmos::download_contents(t.filename.value());
 
-  if (not jx::submit_task_request(t, info))
+  if (not cosmos::submit_task_request(t, info))
      return EXIT_FAILURE;
 
     return EXIT_SUCCESS;

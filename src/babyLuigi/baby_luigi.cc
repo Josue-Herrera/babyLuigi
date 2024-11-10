@@ -10,29 +10,36 @@
 // *** Standard Includes ***
 #include <fstream>
 #include <filesystem>
+#include <zmq_addon.hpp>
 
-namespace jx
+namespace cosmos
 {
     inline namespace v1
     {
         using json = nlohmann::json;
 
-        auto create_request(task const& task) noexcept -> zmq::message_t {
 
-            return zmq::message_t { json::to_bson(task) };
+        auto create_request(task const& task) noexcept {
+
+            return  zmq::message_t { json::to_bson(task) };
         }
 
-        auto submit_task_request(task const& task,  shy_guy_info const& info) noexcept -> bool 
-        {
+        auto submit_task_request(task const& task,  shy_guy_info const& info) noexcept -> bool {
             zmq::context_t context(1);
 
-            zmq::socket_t requester(context, zmq::socket_type::req);
-            requester.connect(info.server_address + ":" + info.port);
-            requester.send(create_request(task), zmq::send_flags::none);
+            zmq::socket_t requester(context, zmq::socket_type::dealer);
+            requester.connect(std::string("tcp://") + info.server_address + ":" + info.port);
+            requester.set(zmq::sockopt::routing_id, "hello");
+            requester.send(create_request(task));
             zmq::message_t test{ };
+            std::array message_pack {zmq::message_t{}, zmq::message_t{}};
 
-            if (auto result = requester.recv(test); result)
-                spdlog::info("Received reply [ size={} msg={} ]", *result,  test.to_string());
+            if (auto result = zmq::recv_multipart(requester, message_pack.data()); result) {
+                auto const binary_request = message_pack[1].to_string_view();
+                auto const unpacked_json  = json::from_bson(binary_request);
+                auto const task           = unpacked_json.template get<cosmos::task>();
+                spdlog::info("Received reply [ size={} msg={} ]", message_pack.size(),  task.name);
+            }
 
             return true;
         }
@@ -67,5 +74,5 @@ namespace jx
             spdlog::error("Unable to correctly open file: {} .", path);
             return {};
         }
-    } // namespace v1    
+    } // namespace v1
 } // namespace jx

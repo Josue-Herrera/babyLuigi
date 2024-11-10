@@ -9,7 +9,7 @@ function(setup_dependencies)
   # already been provided to us by a parent project
   
   if(NOT TARGET fmtlib::fmtlib)
-    cpmaddpackage("gh:fmtlib/fmt#10.2.1")
+    cpmaddpackage("gh:fmtlib/fmt#11.0.1")
   endif()
 
   if(NOT TARGET spdlog::spdlog)
@@ -22,10 +22,6 @@ function(setup_dependencies)
       "gabime/spdlog"
       OPTIONS
       "SPDLOG_FMT_EXTERNAL ON")
-  endif()
-
-  if(NOT TARGET Catch2::Catch2WithMain)
-    cpmaddpackage("gh:catchorg/Catch2@3.3.2") 
   endif()
 
   if(NOT TARGET CLI11::CLI11)
@@ -41,11 +37,29 @@ function(setup_dependencies)
     add_library(json::json ALIAS nlohmann_json)
   endif()
 
+  if (NOT TARGET stdexec::stdexec)
+    CPMAddPackage(
+            NAME stdexec
+            GITHUB_REPOSITORY NVIDIA/stdexec
+            GIT_TAG main
+    )
+  endif ()
+
   if(NOT TARGET zmq::zmq)
     # This is to add cmake/FindZeroMQ.cmake
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-    set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "doc" FORCE)
-    set(CATCH_BUILD_EXAMPLES OFF CACHE BOOL "doc" FORCE)
+    set(ZMQ_STATIC OFF CACHE BOOL "build zmq static lib" FORCE)
+    set(ZMQ_BUILD_TESTS OFF CACHE BOOL "build zmq tests" FORCE)
+    set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "build cppzmq tests" FORCE)
+    set(CATCH_BUILD_EXAMPLES OFF CACHE BOOL "build catch examples" FORCE)
+    cpmaddpackage(
+            NAME
+            ZeroMQ
+            VERSION
+            4.3.5
+            GITHUB_REPOSITORY
+            "zeromq/libzmq"
+            OPTIONS
+    )
     find_package(ZeroMQ REQUIRED)
     cpmaddpackage(
       NAME
@@ -55,14 +69,11 @@ function(setup_dependencies)
       GITHUB_REPOSITORY
       "zeromq/cppzmq"
       OPTIONS
-      "-DCPPZMQ_BUILD_TESTS=OFF" "-DCATCH_BUILD_EXAMPLES=OFF" 
+      "-DCPPZMQ_BUILD_TESTS=OFF" "-DCATCH_BUILD_EXAMPLES=OFF"
     )
+    unset(ZMQ_BUILD_TESTS CACHE)
     unset(CPPZMQ_BUILD_TESTS CACHE)
     unset(CATCH_BUILD_EXAMPLES CACHE)
-  endif()
-
-  if(NOT TARGET tl::expected)
-    cpmaddpackage("gh:TartanLlama/expected@1.1.0")
   endif()
     
 

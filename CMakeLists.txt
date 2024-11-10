@@ -9,6 +9,7 @@ endif()
 # -Wpedantic being enabled and -std=c++20 and -std=gnu++20 for example
 # when compiling with PCH enabled
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set the project name and language
 project(
@@ -21,6 +22,7 @@ include(cmake/Dependencies.cmake)
 setup_dependencies()
 
 include(cmake/SystemLink.cmake)
+add_subdirectory(libraries)
 add_subdirectory(src)
 
 # Don't even look at tests if we're not top level
@@ -34,4 +36,3 @@ add_subdirectory(src)
 # if(BUILD_TESTING)
 #   add_subdirectory(test)
 # endif()
-

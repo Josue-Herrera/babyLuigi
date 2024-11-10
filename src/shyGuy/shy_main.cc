@@ -25,10 +25,10 @@ auto main(int argc, const char** argv) -> int {
     // add optional config path and have a default path (default could be pound define
     CLI11_PARSE(app, argc, argv);
 
-    jx::shy_guy server(port);
+    cosmos::shy_guy server(port);
     
     try { 
-        server.test_run(); 
+        server.run();
     }
     catch (...) {
         return EXIT_FAILURE;

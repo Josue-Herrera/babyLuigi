@@ -1,13 +1,13 @@
 
 #pragma once
 
-#include <task.hpp>
+#include "task.hpp"
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
-#include <type_traits>
 
-namespace jx 
+
+namespace cosmos
 {
     inline namespace v1 
     {
@@ -142,7 +142,7 @@ namespace jx
                 return false;
             }
 
-            auto find_valid_root_task(jx::task const& request) {
+            auto find_valid_root_task(task const& request) {
 
                 //for (auto& [root, tasks] : root_dependancies) {
 
@@ -168,4 +168,4 @@ namespace jx
             adjacency_list_type adjacency_list{};
         };
     }
-} // namespace jx
+} // namespace cosmos

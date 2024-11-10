@@ -1,12 +1,12 @@
 #pragma once
 
-#include <task.hpp>
+#include "task.hpp"
 #include <string>
 #include <vector>
 
-namespace jx 
+namespace cosmos
 {
-    inline namespace v1 
+    inline namespace v1
     {
 
         struct shy_guy_info
@@ -18,7 +18,7 @@ namespace jx
         [[nodiscard]] auto valid(task const&) noexcept -> bool;
 
         [[nodiscard]] auto submit_task_request(task const& task,  shy_guy_info const& info) noexcept -> bool;
-        
+
         [[nodiscard]] auto download_contents(std::string const& path) noexcept -> std::string;
 
         inline static constexpr auto baby_luigi_banner = "\n\nBABY LUIGI\n";

@@ -2,7 +2,6 @@
 
 // *** Project Includes ***
 #include "task.hpp"
-#include "scheduler.hpp"
 #include "task_system/task_system.hpp"
 #include "graph/graph.hpp"
 
@@ -16,7 +15,7 @@
 #include <filesystem>
 #include <variant>
 
-namespace jx 
+namespace cosmos
 {
     inline namespace v1
     {
@@ -57,16 +56,16 @@ namespace jx
 
                     while (true) {
 
-                        std::array message_pack{ zmq::message_t(6), zmq::message_t() };
+                        std::array message_pack{ zmq::message_t(6), zmq::message_t() , zmq::message_t() };
 
-                        if (auto received = subscriber_poller.wait_all(events, 100ms); received)
+                        if (auto received = subscriber_poller.wait_all(events, 50ms); received)
                         {
                             if (auto const size = receive_task(message_pack); not size)
                                 continue;
 
-                            auto const binary_request = message_pack[1].to_string_view();
+                            auto const binary_request = message_pack[2].to_string_view();
                             auto const unpacked_json  = json::from_bson(binary_request);
-                            auto const task           = unpacked_json.template get<jx::task>();
+                            auto const task           = unpacked_json.template get<cosmos::task>();
 
                             if (auto const error = graph_.push_task(task); check(error)) {
                                 spdlog::error("task {} failed because {} ", task.name, to_cstring(error));
@@ -120,9 +119,14 @@ namespace jx
         };
 
         class task_maintainer_type {
-        
+                
+            auto create_dag();
+            auto add_task_to_dag(task);
+            auto remove_task_from_dag();
+            auto snaphot(); 
         
         private:
+  
             std::vector<graph_runner_type> task_runners{};
         };
 

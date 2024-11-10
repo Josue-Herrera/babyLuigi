@@ -9,8 +9,8 @@ add_executable(babyLuigi baby_main.cc ${SOURCE_FILES} ${HEADER_FILES})
 target_include_directories(babyLuigi PRIVATE ${HEADER_DIR})
 
 if(WIN32)
-    target_compile_definitions(babyLuigi PUBLIC _WIN32_WINNT=0x0601)
-    set(CMAKE_CXX_FLAGS "/EHsc /wd4996")
+    #target_compile_definitions(babyLuigi PUBLIC _WIN32_WINNT=0x0601)
+    #set(CMAKE_CXX_FLAGS "/EHsc /wd4996")
 else()
 
     set(CLANG_COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic;-Wshadow;-Wconversion;-Werror")

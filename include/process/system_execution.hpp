@@ -11,7 +11,7 @@
 #define WEXITSTATUS
 #endif
 
-namespace jx 
+namespace cosmos
 {
     inline namespace v1 {
 

@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 // 3rdparty Inc
 #include <nlohmann/json.hpp>
@@ -13,11 +13,11 @@
 #include <string>
 #include <string_view>
 
-namespace jx {
+namespace cosmos {
     inline namespace v1 {
 
-        
-        [[nodiscard]] inline auto binary_file_conversion(nlohmann::json const& input, std::string const&where ) noexcept -> std::string 
+
+        [[nodiscard]] inline auto binary_file_conversion(nlohmann::json const& input, std::string const&where ) noexcept -> std::string
         {
             auto file = input[where]
                 | ranges::views::transform([](auto const& i) { return  i.template get<char>(); })
@@ -27,4 +27,3 @@ namespace jx {
         }
     }
 }
-
