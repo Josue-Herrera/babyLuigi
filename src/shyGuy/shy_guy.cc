@@ -68,7 +68,7 @@ namespace cosmos {
 			spdlog::info("executing {} output {}", request.filename.value(), aaaa.output);
 		}
 
-		[[noreturn]] auto shy_guy::run() noexcept -> void {
+		auto shy_guy::run() noexcept -> void {
 
 			// read from config file
 			enum index { identity, data };
@@ -77,7 +77,7 @@ namespace cosmos {
 			zmq::context_t context(1);
 			zmq::socket_t responder(context, zmq::socket_type::router);
 
-			responder.bind("tcp://127.0.0.1:" + this->port_);
+			responder.bind("tcp://127.0.0.1:" + arguments_.port);
 
 			auto receive_task = [&] (auto& pack) mutable noexcept {
 				try {
@@ -89,15 +89,15 @@ namespace cosmos {
 				}
 			};
 
-			auto reply_to_task = [&](auto& pack) mutable noexcept {
-				try {
-					return zmq::send_multipart(responder, pack);
-				}
-				catch (std::runtime_error const& error) {
-					spdlog::error("failed to recv message : {} ", error.what());
-					return std::optional<size_t>{};
-				}
-			};
+			// auto reply_to_task = [&](auto& pack) mutable noexcept {
+			// 	try {
+			// 		return zmq::send_multipart(responder, pack);
+			// 	}
+			// 	catch (std::runtime_error const& error) {
+			// 		spdlog::error("failed to recv message : {} ", error.what());
+			// 		return std::optional<size_t>{};
+			// 	}
+			// };
 
 			while (true)
 			{
@@ -142,9 +142,9 @@ namespace cosmos {
 		      * @brief Create DAG in a concurrent manner
 		      * @param input
 		      */
-		     auto process(command::type input, cosmos::task&& moved_task) noexcept -> command_result_type {
+		     auto process(command::type input, cosmos::task const& request) noexcept -> command_result_type {
 		         std::lock_guard lock (this->mutex_);
-		        log->info("dag info {}", std::to_underlying(input));
+		        log->info("dag info {}, {}", std::to_underlying(input), request.name);
 		         return {};
 		     }
 		     /**

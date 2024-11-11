@@ -2,6 +2,7 @@
 
 // *** Project Includes ***
 #include "task_maintainer.hpp"
+#include "define_arguements.hpp"
 
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
@@ -21,7 +22,7 @@ public:
 	auto run() noexcept -> void;
 	auto test_run() noexcept -> void;
 
-	explicit shy_guy(std::string port) : port_{std::move(port)}{};
+	explicit shy_guy(shy_arguments arguments) : arguments_{std::move(arguments)}{};
 
 	~shy_guy() = default;
 	shy_guy(shy_guy const &) = delete;
@@ -31,8 +32,8 @@ public:
 private:
   void process_json(nlohmann::json const& json_req);
 
-  // context must come first
-  std::string port_{};
+  // context must come firsts
+  shy_arguments arguments_{};
   std::thread ctx_thread_;
 
   // handles new connections

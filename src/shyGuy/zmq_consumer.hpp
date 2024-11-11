@@ -12,6 +12,7 @@
 #include <exec/static_thread_pool.hpp>
 #include <nlohmann/json.hpp>
 #include <map>
+#include <list>
 
 
 namespace cosmos {
@@ -59,7 +60,7 @@ namespace cosmos {
 
         zmq::context_t context(1);
         zmq::socket_t responder(context, zmq::socket_type::router);
-        responder.bind("tcp://127.0.0.1:" + parameters.port);
+        responder.bind("tcp://127.0.0.1:" + std::to_string(parameters.port));
 
         std::list<zmq_response_type> responses{};
         std::array message_pack { zmq::message_t(), zmq::message_t(), zmq::message_t(100) };
@@ -75,7 +76,7 @@ namespace cosmos {
                 responses.emplace_front();
 
                 auto handle_command =
-                    stdexec::start_on(scheduler,
+                    stdexec::starts_on(scheduler,
                         stdexec::just(unpacked_json.get<task>())
                         | stdexec::then(
                             [&, response = responses.begin()](task const& command) mutable {
@@ -88,8 +89,8 @@ namespace cosmos {
                 scope.spawn(std::move(handle_command));
             }
 
-            std::erase_if(responses, [&responder] (const auto& response) {
-                if (response)
+            std::erase_if(responses, [] (const auto&) {
+                //if (response)
                    // responder.send(response.value().message);
                 return false;
             });

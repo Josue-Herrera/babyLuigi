@@ -45,6 +45,10 @@ function(setup_dependencies)
     )
   endif ()
 
+  if(NOT TARGET ftxui::screen)
+    cpmaddpackage("gh:ArthurSonzogni/FTXUI@5.0.0")
+  endif()
+
   if(NOT TARGET zmq::zmq)
     # This is to add cmake/FindZeroMQ.cmake
     set(ZMQ_STATIC OFF CACHE BOOL "build zmq static lib" FORCE)

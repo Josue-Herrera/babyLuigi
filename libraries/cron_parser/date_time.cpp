@@ -77,16 +77,40 @@ days date_time::to_days(int year, int month, int day) const noexcept {
     return days(era * 146097 + static_cast<int>(doe) - 719468);
 }
 
-long date_time::timezone() noexcept {
+void set_tz() noexcept {
+#ifdef WIN32
     _tzset();
+#else
+    tzset();
+#endif
+}
+
+auto gets_the_zone(long& value) noexcept {
+#ifdef WIN32
+     return _get_timezone(&value);
+#else
+    time_t now = time(NULL);
+
+    struct tm *gm = gmtime(&now);
+    time_t gmt = mktime(gm);
+
+    struct tm *loc = localtime(&now);
+    time_t local = mktime(loc);
+
+     value = static_cast<long>(difftime(local, gmt));
+#endif
+}
+
+long date_time::timezone() noexcept {
+    set_tz();
     long value = 0;
-    return _get_timezone(&value) == 0 ? value : 0L;
+    return 0;//std::timezone == 0 ? value : 0L;
 }
 
 long date_time::daylight_saving_bias() noexcept {
-    _tzset();
+    set_tz();
     long value = 0;
-    return _get_dstbias(&value) == 0 ? value : 0L;
+    return 0;//gets_the_zone(&value) == 0 ? value : 0L;
 }
 
 } // namespace geheb

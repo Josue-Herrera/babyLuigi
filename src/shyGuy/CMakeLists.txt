@@ -39,5 +39,8 @@ target_link_system_libraries(
     libzmq-static
     cppzmq-static
     STDEXEC::stdexec
+    ftxui::screen
+    ftxui::dom
+    ftxui::component
 )
 
