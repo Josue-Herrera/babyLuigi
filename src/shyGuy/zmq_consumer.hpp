@@ -19,7 +19,7 @@ namespace cosmos {
 
     namespace zmq_constants {
          static constexpr const std::size_t max_identity_size = 5;
-         enum index : std::size_t { identity, delimiter, payload };
+         enum index : std::size_t { identity, payload };
          enum response_status : std::size_t { not_set, success, error };
     }
 
@@ -43,7 +43,7 @@ namespace cosmos {
         }
     };
 
-    struct response_type { zmq_constants::response_status status{}; std::array<zmq::message_t, 3> message; };
+    struct response_type { zmq_constants::response_status status{}; std::array<zmq::message_t, 2> message; };
     using zmq_response_type = std::optional<response_type>;
     using  zmq_callback     = auto (*) (zmq_constants::response_status&, task) -> void;
     struct zmq_consumer_params {
@@ -63,7 +63,7 @@ namespace cosmos {
         responder.bind("tcp://127.0.0.1:" + std::to_string(parameters.port));
 
         std::list<zmq_response_type> responses{};
-        std::array message_pack { zmq::message_t(), zmq::message_t(), zmq::message_t(100) };
+        std::array message_pack { zmq::message_t(5), zmq::message_t(100) };
 
         exec::async_scope scope;
         exec::static_thread_pool pool{16};

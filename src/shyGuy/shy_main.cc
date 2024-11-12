@@ -14,13 +14,14 @@ auto main(int argc, const char** argv) -> int {
     cosmos::shy_arguments arguments {};
 
     cosmos::define_shyguys_arguments(app, arguments);
-    CLI11_PARSE(app, argc, argv);
 
     try {
+        CLI11_PARSE(app, argc, argv);
         cosmos::shy_guy server(arguments);
         server.run();
     }
-    catch (...) {
+    catch (std::exception& e) {
+        fmt::println("{}", e.what());
         return EXIT_FAILURE;
     }
 }

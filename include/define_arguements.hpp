@@ -38,7 +38,7 @@ namespace cosmos {
         app.add_option("-m,--max-graphs", defaults.max_task_graphs,
             fmt::format("Max number of task graphs (default: {})", defaults.max_task_graphs));
 
-        app.add_option("-i,--interactive", defaults.interactive,
+        app.add_flag("-i,--interactive", defaults.interactive,
             fmt::format("Use interactive TUI (default: {})", defaults.max_task_graphs));
     }
 

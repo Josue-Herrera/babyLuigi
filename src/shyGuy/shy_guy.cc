@@ -10,15 +10,20 @@
 #include <range/v3/all.hpp>
 #include <nlohmann/json.hpp>
 #include <cron_expression.hpp>
-#include "zmq_consumer.hpp"
 #include "process/file_write.hpp"
+
+#include <stdexec/execution.hpp>
+#include <exec/async_scope.hpp>
+#include <exec/static_thread_pool.hpp>
+
 
 // Standard Inc
 #include <string>
 #include <unordered_map>
 
-namespace cosmos {
-	inline namespace v1 {
+#include "interactive_shyguy.hpp"
+
+namespace cosmos::inline v1 {
 		using namespace std::string_literals;
 		using json = nlohmann::json;
 
@@ -69,6 +74,11 @@ namespace cosmos {
 		}
 
 		auto shy_guy::run() noexcept -> void {
+
+			if (arguments_.interactive) {
+				interactive_shyguy i{};
+				i.demo();
+			}
 
 			// read from config file
 			enum index { identity, data };
@@ -164,4 +174,4 @@ namespace cosmos {
 		     std::shared_ptr<spdlog::logger> log;
 		};
 	}
-}
+
