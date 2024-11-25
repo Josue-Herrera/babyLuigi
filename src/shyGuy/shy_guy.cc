@@ -78,6 +78,7 @@ namespace cosmos::inline v1 {
 			if (arguments_.interactive) {
 				interactive_shyguy i{};
 				i.demo();
+			    std::terminate();
 			}
 
 			// read from config file
