@@ -39,7 +39,7 @@ namespace cosmos
          *
          * @note If you want stderr, use shell redirection (2&>1).
          */
-        inline auto execute(std::string const& command) noexcept -> system_result
+        inline auto execute_command(std::string const& command) noexcept -> system_result
         {
             std::array<char, 10000> buffer{};
 

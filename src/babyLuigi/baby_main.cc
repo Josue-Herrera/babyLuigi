@@ -20,7 +20,7 @@ auto main(int const argc, const char **argv) -> int
   // API general babyluigi -[p|s] python or script -[n|--name] <name> -[t|task] <rel location of file> -[d|--dependencies] <list of dependant names>
   // new API for BL (create dag, delete dag, create task, delete task)
   // create  dag api babyluigi --create-dag -n <name>
-  cosmos::task t{};
+  cosmos::shyguy_request t{};
 
   bool python_type{}, script_type {};
   auto task_type = app.add_option_group("task_subgroup");

@@ -9,7 +9,7 @@
 #include <CLI/CLI.hpp>
 #include <fmt/format.h>
 
-#include "task.hpp"
+#include "shyguy_request.hpp"
 
 
 namespace cosmos {

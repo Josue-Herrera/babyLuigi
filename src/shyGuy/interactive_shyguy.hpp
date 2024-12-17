@@ -6,6 +6,7 @@
 #ifndef INTERACTIVE_SHYGUY_HPP
 #define INTERACTIVE_SHYGUY_HPP
 
+#include "concurrent_shyguy.hpp"
 #include "ftxui/component/captured_mouse.hpp"  // for ftxui
 #include "ftxui/component/component.hpp"  // for Radiobox, Renderer, Tab, Toggle, Vertical
 #include "ftxui/component/component_base.hpp"      // for ComponentBase
@@ -16,13 +17,17 @@
 #include <array>
 #include <string>
 
+
+
 namespace cosmos::inline v1 {
 
-class interactive_shyguy {
 
-    // different types of pages as functions
-    //  main page ->
+class interactive_shyguy {
+private:
+    concurrent_shyguy& shyguy;
 public:
+    explicit interactive_shyguy(concurrent_shyguy& in): shyguy{in}{};
+
     inline auto demo () {
         using namespace ftxui;
         using namespace std::string_literals;
@@ -30,86 +35,73 @@ public:
         // this must be on its own thread!
         auto screen = ScreenInteractive::Fullscreen();
 
-        // The data:
-        std::string first_name;
-        std::string last_name;
-        std::string password{"hello?"};
-        std::string phoneNumber{"9098005550"};
-
-        // The basic input components:
-        auto input_first_name = Input(&first_name, "first name");
-        auto input_last_name = Input(&last_name, "last name");
-
         //The actions
         std::size_t action_index = 0;
         auto choice_type_entries = std::vector{" dag "s, " task "s};
-
-        auto action_entries = std::vector{" create "s," delete "s," run "s,};
+        auto action_entries      = std::vector{" create "s," delete "s," run "s,};
 
         ftxui::Components action_components{};
-
         std::string create_name;
         std::string create_schedule;
-        auto dag_name_input_component    = Input(&create_name, "name");
-        auto dag_schedule_input_compnent = Input(&create_name, "schedule (e.g. * * * * *)");
+        auto name_input_component     = Input(&create_name, "name");
+        auto schedule_input_compnent  = Input(&create_schedule, "schedule (e.g. * * * * *)");
         auto choice_type_toggle_index = 0;
         auto choice_type_toggle       = Toggle(&choice_type_entries, &choice_type_toggle_index);
+        auto const create_label       = "submit"s;
+        auto create_button            = Button(&create_label, [&] {
+            shyguy_request request{};
+            if (choice_type_toggle_index == 0) {
+                request.name = create_name;
+                request.schedule.emplace(create_schedule);
+            }
+            shyguy.process(command::type::create, request);
+        }, ButtonOption::Simple());
 
-        auto const create_label = "submit"s;
-        auto create_dag_button = Button(&create_label, [&]{
-            // on create call back
-        },
-        ButtonOption::Animated());
-
-        auto create_dag_component_tree = Container::Horizontal({
+        auto create_component_tree = Container::Horizontal({
             Container::Vertical({
-                dag_name_input_component,
-                dag_schedule_input_compnent
+                name_input_component,
+                schedule_input_compnent
             }),
-            create_dag_button
+            Container::Vertical({
+                create_button
+            })
         });
 
-        auto create_dag_component_tree_renderer = Renderer(create_dag_component_tree, [&] {
-            return hbox({
-                vbox({
-                    hbox(text("name: "), dag_name_input_component->Render()),
-                    hbox(text("schedule: "), dag_schedule_input_compnent->Render())
-                }) | flex_grow,
-                separator(),
-                vbox({
-                    create_dag_button->Render()
-                }) | xflex_shrink | borderRounded
-            });
+        action_components.emplace_back(
+            Renderer(create_component_tree, [&] {
+                return hbox({
+                    vbox({
+                        hbox(text("name: "), name_input_component->Render()),
+                        hbox(text("schedule: "), schedule_input_compnent->Render())
+                    }) | flex_grow,
+                    separator(),
+                    vbox({
+                        create_button->Render()
+                    }) | borderRounded
+                });
+            })
+        );
+
+        auto action_selection               = Menu(&action_entries, reinterpret_cast<int*>(&action_index), MenuOption::HorizontalAnimated());
+        auto actions_tab_component          = Container::Tab(action_components, reinterpret_cast<int*>(&action_index));
+        auto actions_tab_component_renderer = Renderer([&] {
+            return action_components[action_index]->Render();
         });
-
-        action_components.emplace_back(create_dag_component_tree_renderer);
-
-        auto action_selection      = Menu(&action_entries, reinterpret_cast<int*>(&action_index), MenuOption::HorizontalAnimated());
-        auto actions_tab_component = Container::Tab(action_components, reinterpret_cast<int*>(&action_index));
-        auto actions_tab_component_renderer = Renderer(actions_tab_component, [&] {
-            return vbox({
-                action_components[action_index]->Render(),
-            });
-        });
-
-
 
         auto actions_component_tree = Container::Vertical({
-            Container::Horizontal({action_selection, choice_type_toggle}),
-            Container::Vertical({actions_tab_component_renderer})
+            Container::Horizontal({choice_type_toggle, action_selection}),
+            actions_tab_component
         });
 
         // Tweak how the component tree is rendered:
         auto actions_component_tree_renderer = Renderer(actions_component_tree, [&] {
               return vbox({
                     hbox({
-                        action_selection->Render(),
-                        choice_type_toggle->Render()
+                        choice_type_toggle->Render() | border,
+                        action_selection->Render()
                     }),
                     separator(),
-                    vbox({
-                        actions_tab_component_renderer->Render()
-                    }),
+                    actions_tab_component_renderer->Render() | flex,
               });
         });
 
@@ -183,8 +175,8 @@ public:
                 }),
                 hbox({
                     task_component_tree_renderer->Render()
-                }) | flex
-            }) | xflex_shrink;
+                }) | flex_grow
+            });
         });
 
         // ---------------------------------------------------------------------------
@@ -193,11 +185,10 @@ public:
         int  dags_tab_index     = 0;
         auto dags_tab_entries   = std::vector{ "dags"s, "actions"s, "settings"s };
         auto dags_tab_selection = Menu(&dags_tab_entries, &dags_tab_index, MenuOption::HorizontalAnimated());
-        auto dags_tab_component = Container::Tab(
-        {
-            dags_component_tree_render, actions_component_tree_renderer
-        },
-        &dags_tab_index);
+        auto dags_tab_component = Container::Tab({
+            dags_component_tree_render,
+            actions_component_tree_renderer
+        }, &dags_tab_index);
 
 
         auto main_component_tree = Container::Vertical({

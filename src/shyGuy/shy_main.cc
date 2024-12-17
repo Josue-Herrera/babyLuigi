@@ -4,8 +4,8 @@
 #include <fmt/format.h>
 
 // *** Project Includes ***
-#include "shy_guy.hpp"
 #include "define_arguements.hpp"
+#include "shyguy.hpp"
 
 
 auto main(int argc, const char** argv) -> int {
@@ -17,7 +17,7 @@ auto main(int argc, const char** argv) -> int {
 
     try {
         CLI11_PARSE(app, argc, argv);
-        cosmos::shy_guy server(arguments);
+        cosmos::shyguy server(arguments);
         server.run();
     }
     catch (std::exception& e) {

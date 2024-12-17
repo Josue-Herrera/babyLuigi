@@ -1,7 +1,7 @@
 #pragma once
 
 // *** Project Includes ***
-#include "task_maintainer.hpp"
+#include "concurrent_shyguy.hpp"
 #include "define_arguements.hpp"
 
 // *** 3rd Party Includes ***
@@ -16,19 +16,19 @@
 namespace cosmos {
 inline namespace v1 {
 	
-class shy_guy {
+class shyguy {
 
 public:
 	auto run() noexcept -> void;
 	auto test_run() noexcept -> void;
 
-	explicit shy_guy(shy_arguments arguments) : arguments_{std::move(arguments)}{};
+	explicit shyguy(shy_arguments arguments) : arguments_{std::move(arguments)}{};
 
-	~shy_guy() = default;
-	shy_guy(shy_guy const &) = delete;
-	shy_guy(shy_guy &&) = delete;
-	shy_guy &operator=(shy_guy const &) = delete;
-	shy_guy &operator=(shy_guy &&) = delete;
+	~shyguy() = default;
+	shyguy(shyguy const &) = delete;
+	shyguy(shyguy &&) = delete;
+	shyguy &operator=(shyguy const &) = delete;
+	shyguy &operator=(shyguy &&) = delete;
 private:
   void process_json(nlohmann::json const& json_req);
 
@@ -39,7 +39,6 @@ private:
   // handles new connections
 
   // task maintainer
-  cosmos::task_maintainer_type tasks_{};
   std::thread graph_thread_;
 
 

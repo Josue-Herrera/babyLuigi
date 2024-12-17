@@ -20,7 +20,7 @@ namespace cosmos
         using json = nlohmann::json;
 
 
-        auto create_request(task const& task) noexcept {
+        auto create_request(shyguy_request const& task) noexcept {
 
             return  zmq::message_t { json::to_bson(task) };
         }
@@ -43,7 +43,7 @@ namespace cosmos
             };
         }
 
-        auto submit_task_request(task const& task,  shy_guy_info const& info) noexcept -> bool {
+        auto submit_task_request(shyguy_request const& task,  shy_guy_info const& info) noexcept -> bool {
             zmq::context_t context(1);
 
             zmq::socket_t requester(context, zmq::socket_type::dealer);
@@ -56,14 +56,14 @@ namespace cosmos
             if (auto result = zmq::recv_multipart(requester, message_pack.data()); result) {
                 auto const binary_request = message_pack[1].to_string_view();
                 auto const unpacked_json  = json::from_bson(binary_request);
-                auto const request         = unpacked_json.template get<cosmos::task>();
+                auto const request         = unpacked_json.template get<cosmos::shyguy_request>();
                 spdlog::info("Received reply [ size={} msg={} ]", message_pack.size(),  request.name);
             }
 
             return true;
         }
 
-        auto valid(task const& task) noexcept -> bool
+        auto valid(shyguy_request const& task) noexcept -> bool
         {
             if(task.filename)
             {
