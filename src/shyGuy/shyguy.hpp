@@ -33,7 +33,7 @@ private:
   void process_json(nlohmann::json const& json_req);
 
   // context must come firsts
-  shy_arguments arguments_{};
+  shy_arguments arguments{};
   std::thread ctx_thread_;
 
   // handles new connections

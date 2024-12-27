@@ -51,6 +51,7 @@ public:
         auto create_button            = Button(&create_label, [&] {
             shyguy_request request{};
             if (choice_type_toggle_index == 0) {
+                request.kind = request_type::dag;
                 request.name = create_name;
                 request.schedule.emplace(create_schedule);
             }

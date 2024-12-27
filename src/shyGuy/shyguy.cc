@@ -91,7 +91,7 @@ namespace cosmos::inline v1 {
 		auto shyguy::run() noexcept -> void {
 		    auto file_logger = spdlog::basic_logger_mt("file_log", "logs/file-log.txt", true);
 		    auto shyguy      = concurrent_shyguy{};
-		   // auto request_queue  = std::make_shared<blocking_queue<std::vector<shyguy_request>>>();
+		    // auto request_queue  = std::make_shared<blocking_queue<std::vector<shyguy_request>>>();
 		    // auto io_queue       = std::make_shared<blocking_queue<std::vector<task>>>();
 		    auto high_level_pool      = exec::static_thread_pool{3};
 		    auto high_level_scheduler = high_level_pool.get_scheduler();
@@ -99,7 +99,7 @@ namespace cosmos::inline v1 {
 
 		    auto interactive_view =
                 stdexec::starts_on(high_level_scheduler,
-                    stdexec::just(arguments_.interactive)
+                    stdexec::just(arguments.interactive)
                     | stdexec::then([&] (bool interactive) {
                         file_logger->info("{}", interactive);
                         if (interactive) {

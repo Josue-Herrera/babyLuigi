@@ -49,7 +49,7 @@ namespace cosmos::inline v1 {
          */
         auto process(command::type const input, cosmos::shyguy_request const &request) noexcept -> command_result_type {
             std::lock_guard lock(this->mutex);
-            this->log->info("dag info {}, {}", std::to_underlying(input), request.name);
+            this->log->info("{}, {}", std::to_underlying(input), request.name);
 
             switch (input) {
                 case command::type::create: {
