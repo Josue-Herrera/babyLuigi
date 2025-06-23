@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 #include <algorithm>
+#include <ranges>
 #include <unordered_map>
 #include <range/v3/algorithm/find_first_of.hpp>
 
@@ -27,7 +28,7 @@ namespace cosmos::inline v1
 
         enum class graph_color { white, gray, black };
 
-        enum class graph_error { no_error, dependencies_not_found, constains_duplicates, task_creates_cycle };
+        enum class graph_error { no_error, dependencies_not_found, contains_duplicates, task_creates_cycle };
         
         constexpr auto check(graph_error error) noexcept -> bool {
             return error != graph_error::no_error;
@@ -37,7 +38,7 @@ namespace cosmos::inline v1
             switch (error) {
             case graph_error::no_error: return "no error";
             case graph_error::dependencies_not_found: return "dependencies not found";
-            case graph_error::constains_duplicates: return "constains duplicates";
+            case graph_error::contains_duplicates: return "contains duplicates";
             case graph_error::task_creates_cycle: return "task creates cycle";
             default: return "unknown";
             }
@@ -52,20 +53,21 @@ namespace cosmos::inline v1
         public:
             directed_acyclic_graph() = default;
             directed_acyclic_graph(directed_acyclic_graph const&) = default;
-            directed_acyclic_graph(directed_acyclic_graph&&) = default;
-            
-            // If created with a task it means its the root.
+            directed_acyclic_graph(directed_acyclic_graph&&)  noexcept = default;
+
             explicit  directed_acyclic_graph(std::string name) noexcept :
-                root_name_{std::move(name)}
-            {
-                adjacency_list.emplace(root_name_, std::vector<std::string>{});
+            root_name{std::move(name)} {
+                adjacency_list.emplace(root_name, std::vector<std::string>{});
             }
 
             auto root_view() const noexcept -> std::string_view {
-                return root_name_;
+                return root_name;
             }
             auto dependencies_of(std::string const& name) const -> auto const& { 
                 return adjacency_list.at(name);   
+            }
+            auto contains(std::string const& task_name) const -> bool {
+                return adjacency_list.contains(task_name);
             }
 
             inline auto push_task(
@@ -75,13 +77,12 @@ namespace cosmos::inline v1
                 if (not dependencies)
                     return graph_error::dependencies_not_found;
 
-                // checking for duplicate dependancies
-                if (adjacency_list.contains(task_name)) {
-                    auto const  range      = adjacency_list.at(task_name);
-                    auto const& depends    = dependencies.value();
+                if (contains(task_name)) {
+                    auto const  range   = adjacency_list.at(task_name);
+                    auto const& depends = dependencies.value();
 
                     if (ranges::find_first_of(range,  depends) != std::end(range))
-                        return graph_error::constains_duplicates;
+                        return graph_error::contains_duplicates;
                 }
               
                 adjacency_list.emplace(task_name, dependencies.value());
@@ -128,13 +129,13 @@ namespace cosmos::inline v1
             inline auto has_cycle() const -> bool {
                 color_map_type visited{};
 
-                for (const auto& entry : adjacency_list) {
-                    visited.emplace(entry.first, graph_color::white);
+                for (const auto& key : adjacency_list | std::views::keys) {
+                    visited.emplace(key, graph_color::white);
                 }
 
-                for (const auto& entry : adjacency_list) {
-                    if (visited[entry.first] == graph_color::white) {
-                        if (depth_first_search(visited, entry.first)) {
+                for (const auto& key : adjacency_list | std::views::keys) {
+                    if (visited[key] == graph_color::white) {
+                        if (depth_first_search(visited, key)) {
                             return true;
                         }
                     }
@@ -143,29 +144,8 @@ namespace cosmos::inline v1
                 return false;
             }
 
-            auto find_valid_root_task(std::string const& request) {
 
-                //for (auto& [root, tasks] : root_dependancies) {
-
-                //    auto found{ ranges::find_first_of(tasks, request.dependency_names.value()) };
-
-                //    if (found != tasks.end()) {
-
-                //        if (has_cycle(root, request.name))
-                //            return tl::unexpected(graph_error::task_creates_cycle);
-
-                //        if (ranges::contains(tasks, request.name)) // task already exists
-                //            return tl::unexpected(graph_error::constains_duplicates);
-
-                //        return { root };
-                //    }
-                //}
-
-                return request.size();
-            }
-
-
-            std::string         root_name_{};
+            std::string         root_name{};
             adjacency_list_type adjacency_list{};
         };
 

@@ -22,9 +22,10 @@ public:
 	auto run() noexcept -> void;
 	auto test_run() noexcept -> void;
 
-	explicit shyguy(shy_arguments arguments) : arguments_{std::move(arguments)}{};
+	explicit shyguy(shy_arguments arguments) :
+		arguments{std::move(arguments)}{}
 
-	~shyguy() = default;
+    ~shyguy() = default;
 	shyguy(shyguy const &) = delete;
 	shyguy(shyguy &&) = delete;
 	shyguy &operator=(shyguy const &) = delete;

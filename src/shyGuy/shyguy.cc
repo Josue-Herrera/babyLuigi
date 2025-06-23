@@ -90,7 +90,8 @@ namespace cosmos::inline v1 {
 
 		auto shyguy::run() noexcept -> void {
 		    auto file_logger = spdlog::basic_logger_mt("file_log", "logs/file-log.txt", true);
-		    auto shyguy      = concurrent_shyguy{};
+		    auto shyguy      = concurrent_shyguy{file_logger};
+
 		    // auto request_queue  = std::make_shared<blocking_queue<std::vector<shyguy_request>>>();
 		    // auto io_queue       = std::make_shared<blocking_queue<std::vector<task>>>();
 		    auto high_level_pool      = exec::static_thread_pool{3};

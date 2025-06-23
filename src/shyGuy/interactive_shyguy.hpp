@@ -21,6 +21,11 @@
 
 namespace cosmos::inline v1 {
 
+    template<class Enum>
+    auto to_underlying_ptr(Enum& e) -> std::underlying_type_t<Enum>* {
+        return reinterpret_cast<std::underlying_type_t<Enum>*>(e);
+    }
+
 
 class interactive_shyguy {
 private:
@@ -41,27 +46,36 @@ public:
         auto action_entries      = std::vector{" create "s," delete "s," run "s,};
 
         ftxui::Components action_components{};
-        std::string create_name;
-        std::string create_schedule;
+        std::string create_name{};
+        std::string create_schedule{};
+        int choice_type_index{};
+
         auto name_input_component     = Input(&create_name, "name");
-        auto schedule_input_compnent  = Input(&create_schedule, "schedule (e.g. * * * * *)");
-        auto choice_type_toggle_index = 0;
-        auto choice_type_toggle       = Toggle(&choice_type_entries, &choice_type_toggle_index);
+        auto schedule_input_component = Input(&create_schedule, "schedule (e.g. * * * * *)");
+        auto choice_type_toggle       = Toggle(&choice_type_entries, &choice_type_index);
         auto const create_label       = "submit"s;
-        auto create_button            = Button(&create_label, [&] {
-            shyguy_request request{};
-            if (choice_type_toggle_index == 0) {
-                request.kind = request_type::dag;
-                request.name = create_name;
-                request.schedule.emplace(create_schedule);
-            }
-            shyguy.process(command::type::create, request);
+
+        auto create_button = Button(&create_label, [&] {
+            auto const in = shyguy_request{
+               .data =
+                   (choice_type_index == 0)
+                   ?  shyguy_request::request_t{shyguy_dag {
+                       .name = create_name,
+                       .schedule = create_schedule
+                   }}
+                   :  shyguy_request::request_t {shyguy_task {
+                       .name = create_name,
+                       .associated_dag = "dag_1",
+                   }}
+            };
+            auto const result = shyguy.process(command_enum::create, in);
+
         }, ButtonOption::Simple());
 
         auto create_component_tree = Container::Horizontal({
             Container::Vertical({
                 name_input_component,
-                schedule_input_compnent
+                schedule_input_component
             }),
             Container::Vertical({
                 create_button
@@ -73,7 +87,7 @@ public:
                 return hbox({
                     vbox({
                         hbox(text("name: "), name_input_component->Render()),
-                        hbox(text("schedule: "), schedule_input_compnent->Render())
+                        hbox(text("schedule: "), schedule_input_component->Render())
                     }) | flex_grow,
                     separator(),
                     vbox({

@@ -18,67 +18,145 @@
 
 namespace cosmos::inline v1 {
     // support API commands
-    struct command {
-        enum type : uint8_t {
-            create,
-            remove,
-            execute,
-            snapshot,
-            command_error
-        };
 
-        type command_{};
+    enum class command_enum : uint8_t {
+        create,
+        remove,
+        execute,
+        snapshot,
+        command_error
     };
 
     struct command_result_type {
-
+        enum options : uint8_t {
+            successful,
+            command_error
+        };
+        std::string message{};
+        options result{};
     };
     struct notification_type {
         std::chrono::steady_clock::time_point time;
         cosmos::shyguy_request associated_request;
-        command::type command_type_;
+        command_enum command_type;
+    };
+    struct task_runner {
+        cosmos::shyguy_request request;
+        std::chrono::steady_clock::time_point start;
+        std::chrono::steady_clock::time_point end;
+        command_result_type result;
+        std::size_t index{};
     };
 
     class concurrent_shyguy {
     public:
+        explicit concurrent_shyguy (const std::shared_ptr<spdlog::logger> &l):
+        log{l} {
+
+        }
+
         /**
          * @brief Create DAG in a concurrent manner
          *
          * @param input
          * @param request
          */
-        auto process(command::type const input, cosmos::shyguy_request const &request) noexcept -> command_result_type {
-            std::lock_guard lock(this->mutex);
-            this->log->info("{}, {}", std::to_underlying(input), request.name);
+        auto process(command_enum const input, cosmos::shyguy_request const &request) noexcept -> command_result_type {
+            std::lock_guard lock(mutex);
 
-            switch (input) {
-                case command::type::create: {
-                    if (is_dag(request) and unique_name(request) and has_schedule(request)) {
-                        this->dags.emplace(request.name, directed_acyclic_graph(request.name));
-                        this->dags.emplace(request.name, request.schedule.value());
-                        this->log->debug("create dag {} with schedule {}",
-                            request.name, request.schedule.value()
-                        );
+            request.data | match {
+                [&, input](shyguy_dag const& dag) mutable {
+                    switch (input) {
+                        case command_enum::create: {
+                            // check if dag already exists
+                            auto dag_iter = dags.find(dag.name);
+                            if (dag_iter == dags.end()) {
+                                dags.emplace(dag.name, directed_acyclic_graph(dag.name));
 
+                                if (has_schedule(dag))
+                                    schedules.emplace(dag.name, dag.schedule.value());
+
+                                log->info("create dag {}",dag.name);
+                            }
+                            else {
+                                log->info("dag already exists {}", dag.name);
+                            }
+                        }
+                        case command_enum::remove: {
+                            if (bool const erased = dags.erase(dag.name); erased) {
+                                if (has_schedule(dag))
+                                    schedules.erase(dag.name);
+
+                                log->info("removed dag {}",dag.name);
+                            }
+                            else {
+                                log->info("dag failed to remove {}", dag.name);
+                            }
+
+                            break;
+                        }
+                        case command_enum::execute: {
+                            // find dag, check if its running
+                            if (const auto dag_iter = dags.find(dag.name); dag_iter == dags.end()) {
+                                log->info("dag does not exist, cannot run {}",dag.name);
+                                break;
+                            }
+
+                            log->info("attempting to execute dag {}", dag.name);
+
+                            //
+
+
+                            break;
+                        }
+                        case command_enum::snapshot: {
+                            break;
+                        }
+                        default: {
+                            // log->info("Command Not Supported: {} ", to_string(input));
+                        }
                     }
 
+
+                }, 
+                [input](shyguy_task const& task) {
+
+                },
+                [&](std::monostate) { log->info("Monostate input. This should never happen.");},
+                [&,input](auto&& args) {
+                   log->info("idk {} {}",std::to_underlying(input), args.name);
+                }
+            };
+
+            return {};
+        };
+
+
+        auto nonlocking_dag_process(command_enum const input, shyguy_dag const& dag) noexcept {
+            switch (input) {
+                case command_enum::create: {
+                    dags.emplace(dag.name, directed_acyclic_graph(dag.name));
+
+                    if (has_schedule(dag))
+                        dags.emplace(dag.name, dag.schedule.value());
+
+                    log->info("create dag {}",dag.name);
+                }
+                case command_enum::remove: {
                     break;
                 }
-                case command::type::remove: {
+                case command_enum::execute: {
                     break;
                 }
-                case command::type::execute: {
-                    break;
-                }
-                case command::type::snapshot: {
+                case command_enum::snapshot: {
                     break;
                 }
                 default: {
-                    log->warn("unknown input cc process");
+                    // log->info("Command Not Supported: {} ", to_string(input));
                 }
             }
-            return {};
         }
+
 
         /**
          * @brief run next scheduled dag
@@ -91,7 +169,7 @@ namespace cosmos::inline v1 {
                 notification_type {
                     .time = std::chrono::steady_clock::now() + std::chrono::seconds{5},
                     .associated_request = {},
-                    .command_type_ = command::type::execute
+                    .command_type = command_enum::execute
                 }
             };
         }
@@ -99,12 +177,23 @@ namespace cosmos::inline v1 {
 
     private:
 
-        inline bool unique_name (cosmos::shyguy_request const& r) const {
-            return not this->dags.contains(r.name);
+        inline bool has_unique_name (cosmos::shyguy_dag const& request) const {
+            return not dags.contains(request.name);
+        }
+
+        inline bool has_unique_name (cosmos::shyguy_task const& request) const {
+
+            if (auto iter = dags.find(request.associated_dag); iter != dags.end())
+                return iter->second.contains(request.name);
+
+            return false;
         }
 
         std::unordered_map<std::string, directed_acyclic_graph> dags{};
         std::unordered_map<std::string, std::string> schedules{};
+        std::vector<std::string> running_dags{};
+        std::vector<std::string> running_tasks{};
+
         mutable std::mutex mutex{};
         std::shared_ptr<spdlog::logger> log;
     };
@@ -113,13 +202,13 @@ namespace cosmos::inline v1 {
     {
     public:
 
-        auto notify_wakeup(notification_type notification) noexcept -> void {
+        auto notify_wakeup(const notification_type& notification) noexcept -> void {
             std::lock_guard lock(this->mutex_);
             cached_time_ = notification;
             this->condition_variable_.notify_one();
         }
 
-        auto sleep_until_or_notified(std::chrono::steady_clock::time_point next_time) noexcept {
+        auto sleep_until_or_notified(const std::chrono::steady_clock::time_point next_time) noexcept {
             std::unique_lock lock {this->mutex_};
             this->condition_variable_.wait_until(lock, next_time);
             auto result_time = cached_time_;
@@ -135,7 +224,7 @@ namespace cosmos::inline v1 {
 
     inline auto function_schedule_runner (notify_updater& notifier, concurrent_shyguy& shy_guy) {
         // default sleep time
-        auto sleep_until_dag_scheduled = [&] mutable -> notification_type
+        auto sleep_until_dag_scheduled = [&]() mutable -> notification_type
         {
             auto default_wait_time = std::chrono::steady_clock::now() + std::chrono::months(1);
             while(true)
@@ -144,10 +233,8 @@ namespace cosmos::inline v1 {
                 {
                     return notification.value();
                 }
-                else
-                {
-                    default_wait_time += std::chrono::months(1);
-                }
+
+                default_wait_time += std::chrono::months(1);
             }
         };
 
@@ -161,7 +248,7 @@ namespace cosmos::inline v1 {
                     continue;
                 }
 
-                shy_guy.process(command::type::execute, notified.associated_request);
+                shy_guy.process(command_enum::execute, notified.associated_request);
 
                 auto const next_scheduled_time = shy_guy.next_scheduled_dag();
                 if (not next_scheduled_time.has_value())
