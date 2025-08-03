@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <optional>
 #include <variant>
@@ -11,7 +12,7 @@ namespace cosmos::inline v1 {
     template <typename... Fs>
     struct match : Fs... {
         using Fs::operator()...;
-        constexpr match(Fs &&... fs) : Fs{fs}... {}
+        constexpr explicit match(Fs &&... fs) : Fs{fs}... {}
     };
 
     template<class... Ts>
@@ -30,14 +31,14 @@ namespace cosmos::inline v1 {
     enum class request_type : int { unset, dag, task, unknown };
     enum class task_type { unset, python, shell, unknown };
 
-    inline std::string to_string(request_type const type) {
-        using namespace std::string_literals;
+    inline std::string_view to_string_view(request_type const type) {
+        using namespace std::string_view_literals;
         switch (type) {
-            case request_type::dag      : return "dag"s;
-            case request_type::task       : return "task"s;
-            case request_type::unset       : return "unset"s;
-            case request_type::unknown     : return "unknown"s;
-            default : return "unknown"s;
+            case request_type::dag      : return "dag"sv;
+            case request_type::task       : return "task"sv;
+            case request_type::unset       : return "unset"sv;
+            case request_type::unknown     : return "unknown"sv;
+            default : return "not-set"sv;
         }
     }
 
@@ -49,14 +50,14 @@ namespace cosmos::inline v1 {
         return request_type::unknown;
     }
 
-    inline std::string to_string(task_type const type) {
-        using namespace std::string_literals;
+    inline std::string_view to_string_view(task_type const type) {
+        using namespace std::string_view_literals;
         switch (type) {
-            case task_type::python      : return "python"s;
-            case task_type::shell       : return "shell"s;
-            case task_type::unset       : return "unset"s;
-            case task_type::unknown     : return "unknown"s;
-            default : return "unknown"s;
+            case task_type::python      : return "python"sv;
+            case task_type::shell       : return "shell"sv;
+            case task_type::unset       : return "unset"sv;
+            case task_type::unknown     : return "unknown"sv;
+            default : return "not-set"sv;
         }
     }
 
@@ -125,6 +126,49 @@ namespace cosmos::inline v1 {
         }
     };
 
+    enum class command_enum : uint8_t {
+        create,
+        remove,
+        execute,
+        snapshot,
+        error
+    };
+
+    inline std::string_view to_string_view(command_enum const type) {
+        using namespace std::string_view_literals;
+        switch (type) {
+            case command_enum::create        : return "create"sv;
+            case command_enum::remove        : return "remove"sv;
+            case command_enum::execute       : return "execute"sv;
+            case command_enum::snapshot      : return "snapshot"sv;
+            case command_enum::error : return "error"sv;
+            default : return "not-set"sv;
+        }
+    }
+
+
+    struct command_result_type {
+        enum options : uint8_t {
+            successful,
+            error
+        };
+        std::string message{};
+        options result{};
+    };
+    struct notification_type {
+        std::chrono::steady_clock::time_point time;
+        cosmos::shyguy_request associated_request;
+        command_enum command_type{};
+    };
+    struct task_runner {
+        cosmos::shyguy_request request;
+        std::chrono::steady_clock::time_point start;
+        std::chrono::steady_clock::time_point end;
+        command_result_type result;
+        std::size_t index{};
+    };
+
+
     template<class T>
     requires requires(T t) { t.empty(); }
     inline auto exists(std::optional<T> const& val) -> bool {
@@ -165,7 +209,7 @@ namespace nlohmann {
         static void to_json(json& j, cosmos::shyguy_request const& request) {
             auto to_json_internal = [&]<typename T0>(T0&& value) {
                 const auto request_enum = static_cast<cosmos::request_type>(request.data.index());
-                j["type"] = cosmos::to_string(request_enum);
+                j["type"] = cosmos::to_string_view(request_enum);
                 if constexpr (not std::is_same_v<std::monostate, T0>) {
                     j["value"] = std::forward<T0>(value);
                 }
