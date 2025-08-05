@@ -19,12 +19,11 @@ namespace cosmos::inline v1
         using root_name_str = std::string;
         using name_str      = std::string;
         using cron_tab_str  = std::string;
+        using request_queue_t = std::shared_ptr<blocking_queue<shyguy_request>>;
+        using logger_t = std::shared_ptr<spdlog::logger>;
     public:
-        explicit concurrent_shyguy(const std::shared_ptr<spdlog::logger> &l):
-            log{l}
-        {
-
-        }
+        explicit concurrent_shyguy(logger_t  l, request_queue_t rq):
+            logger{std::move(l)}, request_queue{std::move(rq)} {}
 
         /**
          * @brief processes dags and tasks from baby luigi client.
@@ -33,27 +32,35 @@ namespace cosmos::inline v1
          * @param request the request holding the data.
          */
         auto process(command_enum type, cosmos::shyguy_request const &request) noexcept -> command_result_type;
-        auto process(command_enum type, shyguy_dag const& dag) noexcept -> command_result_type;
-        auto process(command_enum type, shyguy_task const& task) noexcept -> command_result_type;
+
+        auto create(shyguy_dag const &dag) noexcept -> command_result_type;
+        auto remove(shyguy_dag const &dag) noexcept -> command_result_type;
+        auto execute(shyguy_dag const &dag) noexcept -> command_result_type;
+        auto snapshot(shyguy_dag const &dag) noexcept -> command_result_type;
+
+        auto create(shyguy_task const &task) noexcept -> command_result_type;
+        auto remove(shyguy_task const &task) noexcept -> command_result_type;
+        auto execute(shyguy_task const &task) noexcept -> command_result_type;
+        auto snapshot(shyguy_task const &task) noexcept -> command_result_type;
+
         auto process(command_enum, std::monostate) const noexcept -> command_result_type;
-
-
-
         auto next_scheduled_dag() const noexcept -> std::optional<notification_type>;
 
     private:
-        inline bool has_unique_name(cosmos::shyguy_dag const &request) const
+        bool has_unique_name(shyguy_dag const &request) const { return not dags.contains(request.name); }
+        bool has_unique_name(shyguy_task const &request) const
         {
-            return not dags.contains(request.name);
+            if (const auto iter = dags.find(request.associated_dag); iter != dags.end())
+                return iter->second.contains(request.name);
+            return false;
         }
 
-        inline bool has_unique_name(cosmos::shyguy_task const &request) const
+        template<class... T>
+        auto log_return(fmt::format_string<T...> fmt_str, T&&... args) noexcept -> std::string
         {
-
-            if (auto iter = dags.find(request.associated_dag); iter != dags.end())
-                return iter->second.contains(request.name);
-
-            return false;
+            auto value = fmt::format(fmt_str, args...);
+            logger->info(value);
+            return value;
         }
 
         std::unordered_map<root_name_str, directed_acyclic_graph> dags{};
@@ -62,7 +69,8 @@ namespace cosmos::inline v1
         std::vector<name_str> running_tasks{};
 
         mutable std::mutex mutex{};
-        std::shared_ptr<spdlog::logger> log;
+        std::shared_ptr<spdlog::logger> logger;
+        request_queue_t request_queue;
     };
 
     class notify_updater

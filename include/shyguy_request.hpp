@@ -1,15 +1,17 @@
 #pragma once
 
+#include <expected>
 #include <string>
 #include <string_view>
 #include <vector>
 #include <optional>
+#include <type_traits>
 #include <variant>
 #include <nlohmann/json.hpp>
 
 namespace cosmos::inline v1 {
 
-    template <typename... Fs>
+    template <class... Fs>
     struct match : Fs... {
         using Fs::operator()...;
         constexpr explicit match(Fs &&... fs) : Fs{fs}... {}
@@ -111,6 +113,9 @@ namespace cosmos::inline v1 {
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(shyguy_dag, name, schedule)
 
+    template<class Ts>
+    concept requestable = std::same_as<Ts, shyguy_task> or std::same_as<Ts, shyguy_dag>;
+
     class shyguy_request {
     public:
         using request_t = std::variant<std::monostate, shyguy_dag, shyguy_task>;
@@ -146,15 +151,22 @@ namespace cosmos::inline v1 {
         }
     }
 
-
-    struct command_result_type {
-        enum options : uint8_t {
-            successful,
-            error
-        };
-        std::string message{};
-        options result{};
+    enum class command_error : uint8_t
+    {
+        dependencies_not_found,
+        contains_duplicates,
+        task_creates_cycle,
+        task_not_found,
+        monostate_reached,
+        dag_duplicate,
+        dag_deletion_failed,
+        dag_insertion_failed,
+        not_currently_supported,
+        unknown_command
     };
+
+    using command_result_type = std::expected<std::string, command_error>;
+
     struct notification_type {
         std::chrono::steady_clock::time_point time;
         cosmos::shyguy_request associated_request;
@@ -201,7 +213,7 @@ namespace nlohmann {
     template <>
     struct adl_serializer<std::monostate> {
         static void to_json(json& j, const std::monostate&) { j = nullptr; }
-        static void from_json(const json& j, const std::monostate&) {}
+        static void from_json(const json&, const std::monostate&) {}
     };
 
     template <>

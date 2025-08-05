@@ -108,7 +108,7 @@ namespace cosmos::inline v1
             if (task == adjacency_list.end())
                 return std::unexpected(graph_error::task_not_found);
             
-            for(auto& [root_name, dependencies] : adjacency_list)
+            for(auto& [_, dependencies] : adjacency_list)
             {
                 auto found = std::ranges::find(dependencies,task_name);
                 if (found == dependencies.end())
