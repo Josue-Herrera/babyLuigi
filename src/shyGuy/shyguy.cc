@@ -1,4 +1,4 @@
-// Project Inc
+// *** Project Includes ***
 #include <cron_expression.hpp>
 #include <process/file_write.hpp>
 #include <process/system_execution.hpp>
@@ -7,7 +7,7 @@
 #include "interactive_shyguy.hpp"
 #include "shyguy.hpp"
 
-// 3rdparty Inc
+// *** 3rd Party Includes ***
 #include <exec/async_scope.hpp>
 #include <exec/static_thread_pool.hpp>
 #include <nlohmann/json.hpp>
@@ -17,7 +17,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-// Standard Inc
+// *** Standard Includes ***
 #include <string>
 #include <unordered_map>
 
@@ -89,9 +89,9 @@ namespace cosmos::inline v1 {
 		}*/
 
 		auto shyguy::run() noexcept -> void {
-		    auto file_logger   = spdlog::basic_logger_mt("file_log", "logs/file-log.txt", true);
+		    auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
 		    auto request_queue = std::make_shared<blocking_queue<shyguy_request>>();
-		    auto shyguy        = concurrent_shyguy{file_logger, request_queue};
+		    auto shyguy        = concurrent_shyguy{request_queue};
 
 
 		    // auto io_queue          = std::make_shared<blocking_queue<std::vector<task>>>();
@@ -116,6 +116,20 @@ namespace cosmos::inline v1 {
 		    (void) stdexec::sync_wait(scope.on_empty());
 		    high_level_pool.request_stop();
 
-		};
+		}
+
+        auto shyguy::test_run() noexcept -> void
+        {
+		    auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
+		    auto request_queue = std::make_shared<blocking_queue<shyguy_request>>();
+		    auto shyguy        = concurrent_shyguy{request_queue};
+
+
+		    auto io_queue             = std::make_shared<blocking_queue<blocking_queue<shyguy_request>>>();
+		    auto high_level_pool      = exec::static_thread_pool{3};
+		    auto high_level_scheduler = high_level_pool.get_scheduler();
+		    auto scope                = exec::async_scope{};
+
+        };
 	}
 

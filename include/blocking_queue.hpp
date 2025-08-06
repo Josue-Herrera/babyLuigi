@@ -5,14 +5,18 @@
 #ifndef BLOCKING_QUEUE_HPP
 #define BLOCKING_QUEUE_HPP
 
+#include <chrono>
 #include <condition_variable>
+#include <optional>
 #include <mutex>
 #include <queue>
 
-namespace cosmos
+namespace cosmos::inline v1
 {
-    template <class T> struct blocking_queue
+    template <class T>
+    class blocking_queue
     {
+    public:
         constexpr auto enqueue(T&& t) noexcept -> void
         {
             std::lock_guard<std::mutex> lock(m);
@@ -27,6 +31,23 @@ namespace cosmos
             T val = std::move(q.front());
             q.pop();
             return val;
+        }
+
+        template <class Rep, class Period>
+        [[nodiscard]] constexpr auto dequeue_wait(const std::chrono::duration<Rep, Period>& timeout) noexcept -> std::optional<T>
+        {
+            std::unique_lock<std::mutex> lock(m);
+            while(q.empty())
+            {
+                auto value = c.wait_for(lock, timeout);
+                if (value == std::cv_status::timeout)
+                {
+                    return std::nullopt; // Timeout reached
+                }
+            }
+            T val = std::move(q.front());
+            q.pop();
+            return { val };
         }
 
     private:

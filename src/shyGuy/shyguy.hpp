@@ -13,14 +13,14 @@
 #include <thread>
 #include <vector>
 
-namespace cosmos {
-inline namespace v1 {
+
+namespace cosmos::inline v1 {
 	
 class shyguy {
 
 public:
 	auto run() noexcept -> void;
-	auto test_run() noexcept -> void;
+	static auto test_run() noexcept -> void;
 
 	explicit shyguy(shy_arguments arguments) :
 		arguments{std::move(arguments)}{}
@@ -47,5 +47,5 @@ private:
   std::atomic_bool terminate_{};
 };
 
-} // namespace v1
-} // namespace cosmos
+} // namespace cosmos::inline v1
+

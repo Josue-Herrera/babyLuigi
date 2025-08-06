@@ -5,7 +5,9 @@ set(HEADER_DIR ${CMAKE_SOURCE_DIR}/include)
 FILE(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/shyGuy/*.cc)
 FILE(GLOB HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.hpp ${CMAKE_SOURCE_DIR}/src/shyGuy/*.hpp)
 
-add_executable(shyGuy shy_main.cc ${SOURCE_FILES} ${HEADER_FILES})
+add_executable(shyGuy shy_main.cc ${SOURCE_FILES} ${HEADER_FILES}
+        shyexecutioner.cc
+        shyexecutioner.hpp)
 
 target_include_directories(shyGuy PRIVATE ${HEADER_DIR})
 

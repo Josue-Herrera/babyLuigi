@@ -171,39 +171,47 @@ namespace cosmos::inline v1 {
 
     using command_result_type = std::expected<std::string, command_error>;
 
-    struct notification_type {
+    struct notification_type
+    {
         std::chrono::steady_clock::time_point time;
         cosmos::shyguy_request associated_request;
         command_enum command_type{};
     };
-    struct task_runner {
-        cosmos::shyguy_request request;
+
+    struct task_runner
+    {
         std::chrono::steady_clock::time_point start;
         std::chrono::steady_clock::time_point end;
         command_result_type result;
+        std::string name{};
+        std::string contents{};
         std::size_t index{};
     };
 
-
     template<class T>
     requires requires(T t) { t.empty(); }
-    inline auto exists(std::optional<T> const& val) -> bool {
+    inline auto exists(std::optional<T> const& val) -> bool
+    {
         return val.has_value() and not val.value().empty();
     }
 
-    inline auto is_dag(shyguy_request const& request) -> bool {
+    inline auto is_dag(shyguy_request const& request) -> bool
+    {
         return std::holds_alternative<shyguy_dag>(request.data);
     }
 
-    inline auto is_task(shyguy_request const& request) -> bool {
+    inline auto is_task(shyguy_request const& request) -> bool
+    {
         return std::holds_alternative<shyguy_task>(request.data);
     }
 
-    inline auto has_schedule(shyguy_dag const& request) -> bool {
+    inline auto has_schedule(shyguy_dag const& request) -> bool
+    {
         return exists(request.schedule);
     }
 
-    inline auto has_dependencies(shyguy_request const& request) -> bool {
+    inline auto has_dependencies(shyguy_request const& request) -> bool
+    {
          if (const auto task = std::get_if<shyguy_task>(&request.data))
             return exists(task->dependency_names);
 

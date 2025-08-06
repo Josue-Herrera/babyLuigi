@@ -3,63 +3,13 @@
 #include <uuid.h>
 #include <stdexec/execution.hpp>
 
+#include <any>
+
 #include "concurrent_shyguy.hpp"
 
 
 namespace cosmos::inline v1
 {
-    class dag_executor {
-    public:
-        dag_executor(size_t max_concurrent = 4) : max_concurrent_(max_concurrent) {}
-
-        void execute(const std::vector<std::vector<std::string>>& task_levels,
-             std::function<void(const std::string&)> run_task) {
-            for (const auto& level : task_levels) {
-                using sender_t = decltype(stdexec::just() | stdexec::then([]{}));
-                std::vector<sender_t> senders;
-                size_t count = 0;
-                for (const auto& task : level) {
-                    senders.push_back(
-                        stdexec::just() | stdexec::then([&, task] { run_task(task); })
-                    );
-                    ++count;
-                    if (count == max_concurrent_) {
-                        run_senders(senders);
-                        senders.clear();
-                        count = 0;
-                    }
-                }
-                if (!senders.empty()) {
-                    run_senders(senders);
-                }
-            }
-        }
-
-
-    private:
-        // Helper to run all senders in parallel and wait for completion
-        template <typename Sender>
-        void run_senders(std::vector<Sender>& senders) {
-            auto tuple = to_tuple(senders);
-            std::apply([](auto&&... s) {
-                stdexec::sync_wait(stdexec::when_all(std::move(s)...));
-            }, std::move(tuple));
-        }
-
-        // Helper to convert vector to tuple
-        template <typename T>
-        static auto to_tuple(std::vector<T>& v) {
-            return to_tuple_impl(v, std::make_index_sequence<std::tuple_size<std::tuple<>>::value + v.size()>{});
-        }
-
-        template <typename T, std::size_t... I>
-        static auto to_tuple_impl(std::vector<T>& v, std::index_sequence<I...>) {
-            return std::make_tuple(std::move(v[I])...);
-        }
-
-        size_t max_concurrent_;
-    };
-
     auto concurrent_shyguy::process(command_enum type, shyguy_request const &request) noexcept -> command_result_type
     {
         std::lock_guard lock(mutex);

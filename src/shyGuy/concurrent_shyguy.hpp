@@ -22,8 +22,8 @@ namespace cosmos::inline v1
         using request_queue_t = std::shared_ptr<blocking_queue<shyguy_request>>;
         using logger_t = std::shared_ptr<spdlog::logger>;
     public:
-        explicit concurrent_shyguy(logger_t  l, request_queue_t rq):
-            logger{std::move(l)}, request_queue{std::move(rq)} {}
+        explicit concurrent_shyguy(request_queue_t rq):
+            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)} {}
 
         /**
          * @brief processes dags and tasks from baby luigi client.
