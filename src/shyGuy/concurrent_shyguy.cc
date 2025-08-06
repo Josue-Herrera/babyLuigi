@@ -1,17 +1,70 @@
 
 #include <spdlog/spdlog.h>
+#include <uuid.h>
+#include <stdexec/execution.hpp>
 
 #include "concurrent_shyguy.hpp"
 
 
 namespace cosmos::inline v1
 {
+    class dag_executor {
+    public:
+        dag_executor(size_t max_concurrent = 4) : max_concurrent_(max_concurrent) {}
+
+        void execute(const std::vector<std::vector<std::string>>& task_levels,
+             std::function<void(const std::string&)> run_task) {
+            for (const auto& level : task_levels) {
+                using sender_t = decltype(stdexec::just() | stdexec::then([]{}));
+                std::vector<sender_t> senders;
+                size_t count = 0;
+                for (const auto& task : level) {
+                    senders.push_back(
+                        stdexec::just() | stdexec::then([&, task] { run_task(task); })
+                    );
+                    ++count;
+                    if (count == max_concurrent_) {
+                        run_senders(senders);
+                        senders.clear();
+                        count = 0;
+                    }
+                }
+                if (!senders.empty()) {
+                    run_senders(senders);
+                }
+            }
+        }
+
+
+    private:
+        // Helper to run all senders in parallel and wait for completion
+        template <typename Sender>
+        void run_senders(std::vector<Sender>& senders) {
+            auto tuple = to_tuple(senders);
+            std::apply([](auto&&... s) {
+                stdexec::sync_wait(stdexec::when_all(std::move(s)...));
+            }, std::move(tuple));
+        }
+
+        // Helper to convert vector to tuple
+        template <typename T>
+        static auto to_tuple(std::vector<T>& v) {
+            return to_tuple_impl(v, std::make_index_sequence<std::tuple_size<std::tuple<>>::value + v.size()>{});
+        }
+
+        template <typename T, std::size_t... I>
+        static auto to_tuple_impl(std::vector<T>& v, std::index_sequence<I...>) {
+            return std::make_tuple(std::move(v[I])...);
+        }
+
+        size_t max_concurrent_;
+    };
+
     auto concurrent_shyguy::process(command_enum type, shyguy_request const &request) noexcept -> command_result_type
     {
         std::lock_guard lock(mutex);
         return request.data | match
         {
-            [this, type](std::monostate const m) { return process(type, m); },
             [this, type](requestable auto const& dag_or_task) -> command_result_type
             {
                 switch (type)
@@ -22,7 +75,8 @@ namespace cosmos::inline v1
                     case command_enum::snapshot: return snapshot(dag_or_task);
                     default: return { std::unexpected(command_error::unknown_command) };
                 }
-            }
+            },
+            [this, type](std::monostate const m) { return process(type, m); }
         };
     }
 
@@ -83,8 +137,62 @@ namespace cosmos::inline v1
         return log_return("Removed Task {}", task.name);
     }
 
-    auto concurrent_shyguy::execute(shyguy_task const &) noexcept -> command_result_type
+    inline auto create_dag_run_folder(std::filesystem::path const& app = {}) -> std::filesystem::path
     {
+        // Get current date
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        std::tm tm{};
+        localtime_s(&tm, &t);
+
+        // Format: year_month_day
+        std::string date_folder = std::format
+        (
+            "{:04}_{:02}_{:02}",
+            tm.tm_year + 1900,
+            tm.tm_mon + 1,
+            tm.tm_mday
+        );
+
+        // Generate UUID
+        std::random_device rd;
+        auto seed_data = std::array<int, std::mt19937::state_size> {};
+        std::ranges::generate(seed_data, std::ref(rd));
+        std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+        std::mt19937 generator(seq);
+        uuids::uuid_random_generator gen{generator};
+        const auto uuid = gen();
+        std::string uuid_str = uuids::to_string(uuid);
+
+        // Build full path: appData/year_month_day/unique_id
+        auto app_data = app;
+        if (app_data.empty())
+            app_data = getenv("APPDATA");
+
+        auto run_folder = app_data / "cosmos" / "shyguy" / date_folder / uuid_str;
+
+        if (std::filesystem::exists(run_folder))
+            return run_folder;
+
+        std::filesystem::create_directories(run_folder);
+        return run_folder;
+    }
+
+    auto concurrent_shyguy::execute(shyguy_task const &task) noexcept -> command_result_type
+    {
+        auto const run_folder = create_dag_run_folder();
+        auto const dag             = dags.find(task.associated_dag);
+        if (dag == end(dags))
+            return std::unexpected(command_error::dag_not_found);
+
+        auto const ordered_tasks = dag->second.run_order();
+        if (not ordered_tasks)
+            return std::unexpected(command_error::task_creates_cycle);
+
+        auto const& order = ordered_tasks.value();
+
+
+
         return std::unexpected(command_error::not_currently_supported);
     }
     auto concurrent_shyguy::snapshot(shyguy_task const &) noexcept -> command_result_type
@@ -106,9 +214,9 @@ namespace cosmos::inline v1
         {
             notification_type
             {
-                    .time = std::chrono::steady_clock::now() + std::chrono::seconds{5},
-                    .associated_request = {},
-                    .command_type = command_enum::execute
+                .time = std::chrono::steady_clock::now() + std::chrono::seconds{5},
+                .associated_request = {},
+                .command_type = command_enum::execute
             }
         };
     }

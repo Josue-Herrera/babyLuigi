@@ -79,6 +79,18 @@ function(setup_dependencies)
     unset(CPPZMQ_BUILD_TESTS CACHE)
     unset(CATCH_BUILD_EXAMPLES CACHE)
   endif()
-    
+
+  if(NOT TARGET uuid::uuid)
+    cpmaddpackage(
+            NAME
+            stduuid
+            VERSION
+            1.2.3
+            GITHUB_REPOSITORY
+            "mariusbancila/stduuid"
+            OPTIONS
+            "UUID_SYSTEM_GENERATOR ON")
+    add_library(uuid::uuid ALIAS stduuid)
+  endif()
 
 endfunction()

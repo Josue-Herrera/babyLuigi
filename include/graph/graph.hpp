@@ -22,9 +22,7 @@ namespace cosmos::inline v1
         adjacencyList adjacency_list{};
     };
 
-
     enum class graph_color { white, gray, black };
-
     enum class graph_error
     {
         dependencies_not_found,
@@ -32,6 +30,8 @@ namespace cosmos::inline v1
         task_creates_cycle,
         task_not_found
     };
+
+    enum class visit_state { not_visited, visiting, visited };
 
     [[nodiscard]] inline auto to_cstring(graph_error const error) noexcept
     {
@@ -108,9 +108,9 @@ namespace cosmos::inline v1
             if (task == adjacency_list.end())
                 return std::unexpected(graph_error::task_not_found);
             
-            for(auto& [_, dependencies] : adjacency_list)
+            for(auto& dependencies : adjacency_list | std::views::values)
             {
-                auto found = std::ranges::find(dependencies,task_name);
+                auto found = std::ranges::find(dependencies, task_name);
                 if (found == dependencies.end())
                     continue;
 
@@ -121,16 +121,52 @@ namespace cosmos::inline v1
             return {};
         }
 
-    private:
-        /// <summary>
-        /// This function computes the run order of a given set of task and their dependencies;
-        /// </summary>
-        /// <returns>idk</returns>
-        auto compute_run_order()
+        [[nodiscard]] auto run_order() const
         {
+            return topological_sort();
         }
 
-        inline bool depth_first_search(color_map_type& visited, std::string const& node) const
+        [[nodiscard]] auto topological_sort() const -> std::optional<std::vector<std::string>>
+        {
+            std::unordered_map<std::string, visit_state> state;
+            std::vector<std::string> order;
+            bool has_cycle = false;
+
+            for (const auto& name : adjacency_list | std::views::keys)
+            {
+                if (state[name] == visit_state::not_visited)
+                {
+                    dfs(state, has_cycle, order, name);
+                    if (has_cycle)
+                        return std::nullopt;
+                }
+            }
+
+            std::ranges::reverse(order);
+            return order;
+        }
+
+
+    private:
+
+        auto dfs(auto& state, auto& has_cycle, auto& order, const std::string& node) const -> void
+        {
+            if (state[node] == visit_state::visiting) {
+                has_cycle = true;
+                return;
+            }
+            if (state[node] == visit_state::visited)
+                return;
+            state[node] = visit_state::visiting;
+            for (const auto& dep : adjacency_list.at(node)) {
+                dfs(state, has_cycle, order, dep);
+                if (has_cycle) return;
+            }
+            state[node] = visit_state::visited;
+            order.push_back(node);
+        };
+
+        inline auto depth_first_search(color_map_type& visited, std::string const& node) const -> bool
         {
             visited[node] = graph_color::gray;
 

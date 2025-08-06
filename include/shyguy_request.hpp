@@ -162,6 +162,10 @@ namespace cosmos::inline v1 {
         dag_deletion_failed,
         dag_insertion_failed,
         not_currently_supported,
+        dag_not_found,
+        dag_not_scheduled,
+        dag_schedule_not_found,
+        dag_schedule_not_valid,
         unknown_command
     };
 

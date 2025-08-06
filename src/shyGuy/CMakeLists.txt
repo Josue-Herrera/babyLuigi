@@ -42,5 +42,6 @@ target_link_system_libraries(
         ftxui::screen
         ftxui::dom
         ftxui::component
+        uuid::uuid
 )
 
