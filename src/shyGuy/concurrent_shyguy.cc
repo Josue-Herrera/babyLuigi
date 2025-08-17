@@ -1,10 +1,9 @@
 
+#include "concurrent_shyguy.hpp"
 #include <spdlog/spdlog.h>
 #include <stdexec/execution.hpp>
 
-
-#include "concurrent_shyguy.hpp"
-
+#include <fstream>
 
 namespace cosmos::inline v1
 {
@@ -37,6 +36,7 @@ namespace cosmos::inline v1
             return std::unexpected(command_error::dag_insertion_failed);
 
         auto const content_folder = create_content_folder("dags/" + dag.name);
+        auto const content_json   = create_content_json(content_folder);
 
 
 
@@ -65,6 +65,7 @@ namespace cosmos::inline v1
         auto const dag_iter   = dags.find(dag.name);
         if (dag_iter == end(dags))
             return std::unexpected(command_error::dag_not_found);
+
         auto const ordered_tasks = dag_iter->second.run_order();
 
         if (not ordered_tasks)
@@ -126,6 +127,31 @@ namespace cosmos::inline v1
 #endif
     }
 
+    auto concurrent_shyguy::create_content_json(std::filesystem::path const& content_folder) noexcept -> std::filesystem::path
+    {
+        // This might be better in a different file. the definition of the content file
+        nlohmann::json content_json
+        {
+            {"created_at", get_date()},
+            {"tasks", nlohmann::json::array()},
+            {"id" , uuids::to_string(uuid_generator.generate())}
+        };
+
+        auto const content_file = content_folder / "dag_manifest.json";
+        if (std::filesystem::exists(content_file))
+            return content_file;
+
+        std::ofstream file(content_file);
+        if (!file.is_open())
+        {
+            logger->error("Failed to create content.json at {}", content_file.string());
+            return std::filesystem::path{};
+        }
+
+        file << content_json.dump(4);
+        file.close();
+    }
+
     auto  concurrent_shyguy::create_run_folder(std::filesystem::path const& app = {}) noexcept -> std::filesystem::path
     {
         auto run_folder = prefix_folder() / "cosmos" / "shyguy" / app
@@ -151,11 +177,12 @@ namespace cosmos::inline v1
 
     auto concurrent_shyguy::execute(shyguy_task const &task) noexcept -> command_result_type
     {
+        using namespace std::string_literals;
         std::lock_guard lock(mutex);
         auto const dag        = dags.find(task.associated_dag);
         if (dag == end(dags))
             return std::unexpected(command_error::dag_not_found);
-        auto const run_folder = create_run_folder("dags/"+dag->second.view_name());
+        auto const run_folder = create_run_folder("dags/"s.append(dag->second.view_name()));
         auto const ordered_tasks = dag->second.run_order();
         if (not ordered_tasks)
             return std::unexpected(command_error::task_creates_cycle);
@@ -181,16 +208,11 @@ namespace cosmos::inline v1
     auto concurrent_shyguy::next_scheduled_dag() const noexcept -> std::optional<notification_type>
     {
         std::lock_guard lock(this->mutex);
-        return
-        {
-            notification_type
-            {
-                .time = std::chrono::steady_clock::now() + std::chrono::seconds{5},
-                .associated_request = {},
-                .command_type = command_enum::execute
-            }
-        };
+        return {notification_type{.time = std::chrono::steady_clock::now() + std::chrono::seconds{5},
+                                  .associated_request = {},
+                                  .command_type = command_enum::execute}};
     }
+
 }
 
 
