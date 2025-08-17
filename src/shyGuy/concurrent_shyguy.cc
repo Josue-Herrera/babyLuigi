@@ -1,9 +1,7 @@
 
 #include <spdlog/spdlog.h>
-#include <uuid.h>
 #include <stdexec/execution.hpp>
 
-#include <any>
 
 #include "concurrent_shyguy.hpp"
 
@@ -38,6 +36,10 @@ namespace cosmos::inline v1
         if (auto [_, in] = dags.emplace(dag.name, directed_acyclic_graph(dag.name)); not in)
             return std::unexpected(command_error::dag_insertion_failed);
 
+        auto const content_folder = create_content_folder("dags/" + dag.name);
+
+
+
         if (has_schedule(dag))
             schedules.emplace(dag.name, dag.schedule.value());
 
@@ -57,8 +59,19 @@ namespace cosmos::inline v1
         return std::unexpected(command_error::dag_deletion_failed);
     }
 
-    auto concurrent_shyguy::execute(shyguy_dag const &) noexcept -> command_result_type
+    auto concurrent_shyguy::execute(shyguy_dag const &dag) noexcept -> command_result_type
     {
+        auto const run_folder = create_run_folder("dags/" + dag.name);
+        auto const dag_iter   = dags.find(dag.name);
+        if (dag_iter == end(dags))
+            return std::unexpected(command_error::dag_not_found);
+        auto const ordered_tasks = dag_iter->second.run_order();
+
+        if (not ordered_tasks)
+            return std::unexpected(command_error::task_creates_cycle);
+
+        auto const& order = ordered_tasks.value();
+
         return std::unexpected(command_error::not_currently_supported);
     }
 
@@ -87,39 +100,47 @@ namespace cosmos::inline v1
         return log_return("Removed Task {}", task.name);
     }
 
-    inline auto create_dag_run_folder(std::filesystem::path const& app = {}) -> std::filesystem::path
+    auto get_date()
     {
         // Get current date
-        auto now = std::chrono::system_clock::now();
-        std::time_t t = std::chrono::system_clock::to_time_t(now);
-        std::tm tm{};
-        localtime_s(&tm, &t);
-
+        auto now   = std::chrono::system_clock::now();
+        auto today = std::chrono::floor<std::chrono::days>(now);
+        std::chrono::year_month_day ymd {std::chrono::sys_days{today}};
         // Format: year_month_day
-        std::string date_folder = std::format
-        (
-            "{:04}_{:02}_{:02}",
-            tm.tm_year + 1900,
-            tm.tm_mon + 1,
-            tm.tm_mday
+        std::string date_folder = std::format(
+            "{:%Y_%m_%d}",
+            ymd
         );
 
-        // Generate UUID
-        std::random_device rd;
-        auto seed_data = std::array<int, std::mt19937::state_size> {};
-        std::ranges::generate(seed_data, std::ref(rd));
-        std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
-        std::mt19937 generator(seq);
-        uuids::uuid_random_generator gen{generator};
-        const auto uuid = gen();
-        std::string uuid_str = uuids::to_string(uuid);
+        return date_folder;
+    }
 
-        // Build full path: appData/year_month_day/unique_id
-        auto app_data = app;
-        if (app_data.empty())
-            app_data = getenv("APPDATA");
+    auto prefix_folder()
+    {
+#ifdef _WIN32
+        auto app_data = std::getenv("APPDATA");
+        return std::filesystem::path(app_data);
+#else
+        auto app_data = std::getenv("/opt");
+        return std::filesystem::path(app_data);
+#endif
+    }
 
-        auto run_folder = app_data / "cosmos" / "shyguy" / date_folder / uuid_str;
+    auto  concurrent_shyguy::create_run_folder(std::filesystem::path const& app = {}) noexcept -> std::filesystem::path
+    {
+        auto run_folder = prefix_folder() / "cosmos" / "shyguy" / app
+            / get_date() / uuids::to_string(uuid_generator.generate());
+
+        if (std::filesystem::exists(run_folder))
+            return run_folder;
+
+        std::filesystem::create_directories(run_folder);
+        return run_folder;
+    }
+
+    auto concurrent_shyguy::create_content_folder(std::filesystem::path const& app = {}) noexcept -> std::filesystem::path
+    {
+        auto run_folder = prefix_folder() / "cosmos" / "shyguy" / "content" / app;
 
         if (std::filesystem::exists(run_folder))
             return run_folder;
@@ -130,11 +151,11 @@ namespace cosmos::inline v1
 
     auto concurrent_shyguy::execute(shyguy_task const &task) noexcept -> command_result_type
     {
-        auto const run_folder = create_dag_run_folder();
-        auto const dag             = dags.find(task.associated_dag);
+        std::lock_guard lock(mutex);
+        auto const dag        = dags.find(task.associated_dag);
         if (dag == end(dags))
             return std::unexpected(command_error::dag_not_found);
-
+        auto const run_folder = create_run_folder("dags/"+dag->second.view_name());
         auto const ordered_tasks = dag->second.run_order();
         if (not ordered_tasks)
             return std::unexpected(command_error::task_creates_cycle);

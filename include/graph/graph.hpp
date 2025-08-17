@@ -64,7 +64,7 @@ namespace cosmos::inline v1
             adjacency_list.emplace(root_name, std::vector<std::string>{});
         }
 
-        [[nodiscard]] auto root_view() const noexcept -> std::string_view
+        [[nodiscard]] auto view_name() const noexcept -> std::string_view
         {
             return root_name;
         }

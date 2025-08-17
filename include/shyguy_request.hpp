@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <expected>
 #include <string>
 #include <string_view>
@@ -178,10 +179,12 @@ namespace cosmos::inline v1 {
         command_enum command_type{};
     };
 
-    struct task_runner
+    class task_runner
     {
+    public:
         std::chrono::steady_clock::time_point start;
         std::chrono::steady_clock::time_point end;
+        std::function<auto()->void> task_function;
         command_result_type result;
         std::string name{};
         std::string contents{};

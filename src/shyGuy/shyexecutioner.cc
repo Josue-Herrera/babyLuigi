@@ -29,7 +29,7 @@ namespace cosmos::inline v1
         return logger;
     }
 
-    auto shy_executioner::process() const noexcept -> void
+    auto shy_executioner::dag_processing_factory_line() const noexcept -> void
     {
         using namespace std::chrono_literals;
         const auto logger = get_logger();
@@ -40,18 +40,21 @@ namespace cosmos::inline v1
         while (running->load(std::memory_order_relaxed))
         {
             const auto [task_runners, dag] = request_queue->dequeue();
+            std::vector<std::reference_wrapper<const task_runner>> task_refs { std::begin(task_runners), std::end(task_runners) };
             bool available_tasks_to_run = true;
+
+
             while (available_tasks_to_run and running->load(std::memory_order_relaxed))
             {
-                std::vector<std::reference_wrapper<const task_runner>> task_refs { std::begin(task_runners), std::end(task_runners) };
+
                 for(auto const& task_group : task_refs | ranges::views::chunk(4))
                 {
                     for (auto const& tasks : task_group)
                     {
-                        auto sender = stdexec::just(tasks.get(), std::make_shared<directed_acyclic_graph>(dag))
-                            | stdexec::then([logger] (auto const& r, const std::shared_ptr<directed_acyclic_graph> &d)
+                        auto sender = stdexec::just(tasks.get(), dag))
+                            | stdexec::then([logger] (auto const& r, const directed_acyclic_graph &d)
                             {
-                                logger->info( "[shy_exec]Processing task: {} in DAG: {}", r.name, d->root_view());
+                                logger->info( "[shy_exec]Processing task: {} in DAG: {}", r.name, d.view_name());
 
                             });
 
@@ -60,10 +63,12 @@ namespace cosmos::inline v1
                 }
 
 
-            }
-        }
 
+            }
+
+        }
         stdexec::sync_wait(scope.on_empty());
+
     }
 
     auto shy_executioner::dispatcher() noexcept -> void
@@ -72,7 +77,7 @@ namespace cosmos::inline v1
         const auto logger = get_logger();
         while (running->load(std::memory_order_relaxed))
         {
-           process();
+           dag_processing_factory_line();
         }
 
     }

@@ -20,7 +20,7 @@ namespace cosmos::inline v1
         explicit shy_executioner(terminator_t r, request_queue_t rq) noexcept
             : running{std::move(r)}, request_queue{std::move(rq)} {}
 
-        auto process() const noexcept -> void;
+        auto dag_processing_factory_line() const noexcept -> void;
         auto dispatcher() noexcept -> void;
 
         std::shared_ptr<std::atomic_bool> running;

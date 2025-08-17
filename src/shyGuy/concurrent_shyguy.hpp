@@ -7,13 +7,32 @@
 
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
+#include <uuid.h>
 #include <zmq.hpp>
 
 // *** Standard Includes ***
 #include <filesystem>
+#include <random>
 
 namespace cosmos::inline v1
 {
+
+    class id_generator
+    {
+    public:
+        id_generator() noexcept : generator_engine(std::random_device{}()),
+                                  generator(uuids::uuid_random_generator(generator_engine))
+        {}
+
+        auto generate() noexcept -> uuids::uuid
+        {
+            return generator();
+        }
+
+        std::mt19937 generator_engine;
+        uuids::uuid_random_generator generator;
+    };
+
     class concurrent_shyguy
     {
         using root_name_str = std::string;
@@ -23,7 +42,9 @@ namespace cosmos::inline v1
         using logger_t = std::shared_ptr<spdlog::logger>;
     public:
         explicit concurrent_shyguy(request_queue_t rq):
-            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)} {}
+            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)}
+         {}
+
 
         /**
          * @brief processes dags and tasks from baby luigi client.
@@ -47,6 +68,8 @@ namespace cosmos::inline v1
         auto next_scheduled_dag() const noexcept -> std::optional<notification_type>;
 
     private:
+        static auto create_content_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
+        auto create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
         bool has_unique_name(shyguy_dag const &request) const { return not dags.contains(request.name); }
         bool has_unique_name(shyguy_task const &request) const
         {
@@ -68,9 +91,10 @@ namespace cosmos::inline v1
         std::vector<root_name_str> running_dags{};
         std::vector<name_str> running_tasks{};
 
-        mutable std::mutex mutex{};
+        mutable std::recursive_mutex mutex{};
         std::shared_ptr<spdlog::logger> logger;
         request_queue_t request_queue;
+        id_generator uuid_generator{};
     };
 
     class notify_updater
