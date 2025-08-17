@@ -1,6 +1,8 @@
 #pragma once
 
+// *** Standard Includes ***
 #include <array>
+#include <expected>
 #include <ostream>
 #include <string>
 
@@ -11,63 +13,51 @@
 #define WEXITSTATUS
 #endif
 
-namespace cosmos
+
+namespace cosmos::inline v1
 {
-    inline namespace v1 {
 
-        class system_result
+    using exitstatus_t = int;
+    /**
+     * @brief system command and get STDOUT result.
+     *
+     * @param command system command to execute
+     *
+     * @return commandResult containing STDOUT (not stderr) output & exitstatus
+     * of command. Empty if command failed (or has no output).
+     *
+     * @note If you want stderr, use shell redirection (2&>1).
+     */
+    inline auto execute_command(std::string const& command) noexcept -> std::expected<std::string, exitstatus_t>
+    {
+        std::array<char, 10000> buffer{};
+
+        std::FILE* pipe = popen(command.c_str(), "r");
+
+        if (pipe == nullptr)
         {
-        public:
-
-            friend std::ostream& operator<<(std::ostream& os, system_result const& result)
-            {
-                os << "command exitstatus: " << result.exitstatus << " output: " << result.output;
-                return os;
-            }
-
-            std::string output;
-            int exitstatus;
-        };
-
-        /**
-         * @brief system command and get STDOUT result.
-         *
-         * @param command system command to execute
-         *
-         * @return commandResult containing STDOUT (not stderr) output & exitstatus
-         * of command. Empty if command failed (or has no output).
-         *
-         * @note If you want stderr, use shell redirection (2&>1).
-         */
-        inline auto execute_command(std::string const& command) noexcept -> system_result
-        {
-            std::array<char, 10000> buffer{};
-
-            std::FILE* pipe = popen(command.c_str(), "r");
-
-            if (pipe == nullptr)
-            {
-                return system_result{ std::string("[error] unable to run command."), EXIT_FAILURE };
-            }
-
-            std::string result{};
-            while (true)
-            {
-                std::size_t bytesread = std::fread(buffer.data(), sizeof(char), sizeof(buffer), pipe);
-
-                if (not bytesread)
-                {
-                    break;
-                }
-
-                result += std::string(buffer.data(), bytesread);
-            }
-
-            auto status = pclose(pipe);
-            auto exitcode = WEXITSTATUS(status);
-            return system_result{ result, exitcode };
+            return std::unexpected(EXIT_FAILURE);
         }
 
-    } // namespace v1
+        std::string result{};
+        while (true)
+        {
+            const std::size_t size = std::fread(buffer.data(), sizeof(char), sizeof(buffer), pipe);
+            if (not size)
+            {
+                break;
+            }
 
-} // namespace jx
+            result += std::string(buffer.data(), size);
+        }
+
+        const auto status = pclose(pipe);
+        if (auto exitcode = WEXITSTATUS(status); exitcode != EXIT_SUCCESS && result.empty())
+        {
+            return std::unexpected(exitcode);
+        }
+
+        return { result };
+    }
+} // namespace cosmos::inline v1
+
