@@ -35,13 +35,11 @@ namespace cosmos::inline v1
         if (auto [_, in] = dags.emplace(dag.name, directed_acyclic_graph(dag.name)); not in)
             return std::unexpected(command_error::dag_insertion_failed);
 
-        auto const content_folder = create_content_folder("dags/" + dag.name);
-        auto const content_json   = create_content_json(content_folder);
-
-
-
         if (has_schedule(dag))
             schedules.emplace(dag.name, dag.schedule.value());
+
+        auto const content_folder = create_content_folder("dags/" + dag.name);
+        auto const content_json   = create_content_json(content_folder);
 
         return log_return("created dag {}", dag.name);
     }
@@ -127,17 +125,19 @@ namespace cosmos::inline v1
 #endif
     }
 
-    auto concurrent_shyguy::create_content_json(std::filesystem::path const& content_folder) noexcept -> std::filesystem::path
+    auto concurrent_shyguy::create_content_json(std::filesystem::path const& app, shyguy_dag const &request) noexcept -> std::filesystem::path
     {
         // This might be better in a different file. the definition of the content file
-        nlohmann::json content_json
+        const nlohmann::json content_json
         {
             {"created_at", get_date()},
             {"tasks", nlohmann::json::array()},
-            {"id" , uuids::to_string(uuid_generator.generate())}
+            {"id" , uuids::to_string(uuid_generator.generate())},
+            {"dag_name", request.name},
+            {"dag_schedule", request.schedule.value_or(std::string{})},
         };
 
-        auto const content_file = content_folder / "dag_manifest.json";
+        auto content_file = app / "dag_manifest.json";
         if (std::filesystem::exists(content_file))
             return content_file;
 
@@ -150,6 +150,7 @@ namespace cosmos::inline v1
 
         file << content_json.dump(4);
         file.close();
+        return content_file;
     }
 
     auto  concurrent_shyguy::create_run_folder(std::filesystem::path const& app = {}) noexcept -> std::filesystem::path

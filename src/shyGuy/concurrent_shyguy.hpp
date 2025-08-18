@@ -68,7 +68,7 @@ namespace cosmos::inline v1
         auto next_scheduled_dag() const noexcept -> std::optional<notification_type>;
 
     private:
-        auto create_content_json(std::filesystem::path const& app) noexcept -> std::filesystem::path;
+        auto create_content_json(std::filesystem::path const& app, shyguy_dag const &request) noexcept-> std::filesystem::path;
         static auto create_content_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
         auto create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
         bool has_unique_name(shyguy_dag const &request) const { return not dags.contains(request.name); }
