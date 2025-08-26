@@ -90,7 +90,7 @@ namespace cosmos::inline v1 {
 
 		auto shyguy::run() noexcept -> void {
 		    auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
-		    auto request_queue = std::make_shared<blocking_queue<shyguy_request>>();
+		    auto request_queue = std::make_shared<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>();
 		    auto shyguy        = concurrent_shyguy{request_queue};
 
 
@@ -121,7 +121,7 @@ namespace cosmos::inline v1 {
         auto shyguy::test_run() noexcept -> void
         {
 		    auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
-		    auto request_queue = std::make_shared<blocking_queue<shyguy_request>>();
+		    auto request_queue = std::make_shared<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>();
 		    auto shyguy        = concurrent_shyguy{request_queue};
 
 

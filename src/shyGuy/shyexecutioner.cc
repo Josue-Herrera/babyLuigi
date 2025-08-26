@@ -19,6 +19,7 @@
 
 namespace cosmos::inline v1
 {
+
     auto get_logger()
     {
         auto logger = spdlog::get("shyguy_logger");
@@ -51,7 +52,7 @@ namespace cosmos::inline v1
                 {
                     for (auto const& tasks : task_group)
                     {
-                        auto sender = stdexec::just(tasks.get(), dag))
+                        auto sender = stdexec::just(tasks.get(), dag)
                             | stdexec::then([logger] (auto const& r, const directed_acyclic_graph &d)
                             {
                                 logger->info( "[shy_exec]Processing task: {} in DAG: {}", r.name, d.view_name());
@@ -61,9 +62,6 @@ namespace cosmos::inline v1
                         scope.spawn(stdexec::on(high_level_scheduler, std::move(sender)));
                     }
                 }
-
-
-
             }
 
         }

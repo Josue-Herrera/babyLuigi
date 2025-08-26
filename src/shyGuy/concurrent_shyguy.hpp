@@ -38,7 +38,8 @@ namespace cosmos::inline v1
         using root_name_str = std::string;
         using name_str      = std::string;
         using cron_tab_str  = std::string;
-        using request_queue_t = std::shared_ptr<blocking_queue<shyguy_request>>;
+        using task_request    = std::pair<std::vector<task_runner>, directed_acyclic_graph>;
+        using request_queue_t = std::shared_ptr<blocking_queue<task_request>>;
         using logger_t = std::shared_ptr<spdlog::logger>;
     public:
         explicit concurrent_shyguy(request_queue_t rq):
@@ -71,6 +72,8 @@ namespace cosmos::inline v1
         auto create_content_json(std::filesystem::path const& app, shyguy_dag const &request) noexcept-> std::filesystem::path;
         static auto create_content_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
         auto create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
+        static auto find_content(std::filesystem::path const& suffix) noexcept -> std::vector<std::byte>;
+
         bool has_unique_name(shyguy_dag const &request) const { return not dags.contains(request.name); }
         bool has_unique_name(shyguy_task const &request) const
         {
@@ -87,6 +90,7 @@ namespace cosmos::inline v1
             return value;
         }
 
+        std::unordered_map<name_str, shyguy_task> task_map{};
         std::unordered_map<root_name_str, directed_acyclic_graph> dags{};
         std::unordered_map<root_name_str, cron_tab_str> schedules{};
         std::vector<root_name_str> running_dags{};

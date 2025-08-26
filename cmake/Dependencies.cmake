@@ -50,11 +50,12 @@ function(setup_dependencies)
   endif()
 
   if(NOT TARGET zmq::zmq)
-    # This is to add cmake/FindZeroMQ.cmake
     set(ZMQ_STATIC OFF CACHE BOOL "build zmq static lib" FORCE)
     set(ZMQ_BUILD_TESTS OFF CACHE BOOL "build zmq tests" FORCE)
     set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "build cppzmq tests" FORCE)
     set(CATCH_BUILD_EXAMPLES OFF CACHE BOOL "build catch examples" FORCE)
+    set(ENABLE_WS OFF CACHE BOOL "build with websocket support" FORCE)
+
     cpmaddpackage(
             NAME
             ZeroMQ
@@ -78,6 +79,7 @@ function(setup_dependencies)
     unset(ZMQ_BUILD_TESTS CACHE)
     unset(CPPZMQ_BUILD_TESTS CACHE)
     unset(CATCH_BUILD_EXAMPLES CACHE)
+
   endif()
 
   if(NOT TARGET uuid::uuid)

@@ -104,6 +104,7 @@ namespace cosmos::inline v1 {
         std::optional<std::string> filename{};
         std::optional<std::string> file_content{};
         std::optional<std::vector<std::string>> dependency_names{};
+        int file_contents;
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(shyguy_task,
         name, associated_dag, type, filename, file_content, dependency_names)
@@ -167,6 +168,11 @@ namespace cosmos::inline v1 {
         dag_not_scheduled,
         dag_schedule_not_found,
         dag_schedule_not_valid,
+        task_insertion_failed,
+        task_deletion_failed,
+        task_file_not_found,
+        task_file_creation_failed,
+        task_not_runnable,
         unknown_command
     };
 
@@ -187,7 +193,7 @@ namespace cosmos::inline v1 {
         std::function<auto()->void> task_function;
         command_result_type result;
         std::string name{};
-        std::string contents{};
+        std::vector<std::byte> contents{};
         std::size_t index{};
     };
 

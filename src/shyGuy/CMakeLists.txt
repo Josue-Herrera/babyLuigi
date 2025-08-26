@@ -12,9 +12,8 @@ add_executable(shyGuy shy_main.cc ${SOURCE_FILES} ${HEADER_FILES}
 target_include_directories(shyGuy PRIVATE ${HEADER_DIR})
 
 if (WIN32)
-    target_compile_definitions(shyGuy PUBLIC _WIN32_WINNT=0x0601)
-    set(CMAKE_CXX_FLAGS "/EHsc /wd4996")
-else ()
+    #target_compile_definitions(shyGuy PUBLIC _WIN32_WINNT=0x0601)
+else()
 
     set(CLANG_COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic;-Wshadow;-Wconversion;-Werror")
     set(CLANG_COMPILE_DEBUG_OPTIONS "${CLANG_COMPILE_OPTIONS};-O0;")

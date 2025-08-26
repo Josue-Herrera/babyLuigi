@@ -42,8 +42,6 @@ private:
   // task maintainer
   std::thread graph_thread_;
 
-
-  std::vector<std::thread> task_runners{};
   std::atomic_bool terminate_{};
 };
 

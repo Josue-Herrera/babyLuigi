@@ -30,7 +30,7 @@ namespace cosmos::inline v1 {
 
 
 class interactive_shyguy {
-        using request_queue_t = std::shared_ptr<blocking_queue<shyguy_request>>;
+        using request_queue_t = std::shared_ptr<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>;
 private:
     request_queue_t request_queue;
 public:
@@ -60,17 +60,8 @@ public:
 
         auto create_button = Button(&create_label, [&] {
             request_queue->enqueue(
-                shyguy_request{
-                   .data =
-                       (choice_type_index == 0)
-                       ?  shyguy_request::request_t{shyguy_dag {
-                           .name = create_name,
-                           .schedule = create_schedule
-                       }}
-                       :  shyguy_request::request_t {shyguy_task {
-                           .name = create_name,
-                           .associated_dag = "dag_1",
-                       }}
+                {
+
                 }
             );
         }, ButtonOption::Simple());
