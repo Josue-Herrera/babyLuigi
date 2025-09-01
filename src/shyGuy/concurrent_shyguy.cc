@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexec/execution.hpp>
 
+#include <ranges>
 #include <fstream>
 
 namespace cosmos::inline v1
@@ -110,18 +111,18 @@ namespace cosmos::inline v1
                 task_runner runner{};
                 runner.name = task_name;
                 runner.contents = find_content("tasks/" + task_name);
-                runner.task_function = [this] -> void
+                runner.task_function = [this] () noexcept -> void
                 {
                     std::lock_guard lock (mutex);
-                    std::string const command = "./task_executable"; // Placeholder for actual command
-                    if (auto output = execute_command(command))
+                    std::string const command {"./task_executable"}; // Placeholder for actual command
+                    if (auto output = execute_command(command); output)
                         logger->info("Task executed successfully with output: {}", output.value());
                     else
                         logger->error("Task execution failed with exit code: {}", output.error());
                 };
                 return runner;
-            })
-            | std::ranges::to<std::vector>(),
+            }) | std::ranges::to<std::vector>(),
+
             dag_iter->second
             }
         );
@@ -147,7 +148,7 @@ namespace cosmos::inline v1
             auto const content_file = content_folder / "content";
             if (std::ofstream file(content_file, std::ios::binary); file.is_open())
             {
-                file.write(task.file_content->data(), task.file_content->size());
+                file.write(std::data(*task.file_content), std::size(*task.file_content));
                 file.close();
             }
             else
@@ -162,9 +163,9 @@ namespace cosmos::inline v1
 
     auto concurrent_shyguy::remove(shyguy_task const& task) noexcept -> command_result_type
     {
-        if (auto const dag = dags.find(task.associated_dag); dag != end(dags))
+        if (auto const dag = dags.find(task.associated_dag); dag != std::end(dags))
         {
-            if (auto const removed = dag->second.remove_task(task.name); !removed)
+            if (auto const removed = dag->second.remove_task(task.name); not removed)
                 return std::unexpected(static_cast<command_error>(removed.error()));
 
         }
@@ -175,10 +176,10 @@ namespace cosmos::inline v1
     {
         using namespace std::string_literals;
         std::lock_guard lock(mutex);
-        auto const dag        = dags.find(task.associated_dag);
-        if (dag == end(dags))
+        auto const dag = dags.find(task.associated_dag);
+        if (dag == std::end(dags))
             return std::unexpected(command_error::dag_not_found);
-        auto const run_folder = create_run_folder("dags/"s.append(dag->second.view_name()));
+        auto const run_folder    = create_run_folder("dags/"s.append(dag->second.view_name()));
         auto const ordered_tasks = dag->second.run_order();
         if (not ordered_tasks)
             return std::unexpected(command_error::task_creates_cycle);
@@ -235,7 +236,7 @@ namespace cosmos::inline v1
         return content_file;
     }
 
-    auto  concurrent_shyguy::create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path
+    auto concurrent_shyguy::create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path
     {
         auto run_folder = prefix_folder() / "cosmos" / "shyguy" / app
             / get_date() / uuids::to_string(uuid_generator.generate());
@@ -247,7 +248,7 @@ namespace cosmos::inline v1
         return run_folder;
     }
 
-    auto concurrent_shyguy::find_content(std::filesystem::path const& suffix) noexcept -> std::vector<std::byte>
+    auto concurrent_shyguy::find_content(std::filesystem::path const& suffix) noexcept -> std::vector<char>
     {
         auto content = prefix_folder() / "cosmos" / "shyguy" / "content" / suffix / "content";
 

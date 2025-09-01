@@ -17,7 +17,7 @@ namespace cosmos {
     struct shy_arguments {
         std::string port{ "90909" };
         unsigned max_task_graphs{ 1000 };
-        bool interactive {};
+        bool interactive {true};
     };
 
     /*

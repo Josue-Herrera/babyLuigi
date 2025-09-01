@@ -72,7 +72,7 @@ namespace cosmos::inline v1
         auto create_content_json(std::filesystem::path const& app, shyguy_dag const &request) noexcept-> std::filesystem::path;
         static auto create_content_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
         auto create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path;
-        static auto find_content(std::filesystem::path const& suffix) noexcept -> std::vector<std::byte>;
+        static auto find_content(std::filesystem::path const& suffix) noexcept -> std::vector<char>;
 
         bool has_unique_name(shyguy_dag const &request) const { return not dags.contains(request.name); }
         bool has_unique_name(shyguy_task const &request) const

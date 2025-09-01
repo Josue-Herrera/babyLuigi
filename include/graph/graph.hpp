@@ -1,14 +1,14 @@
 #pragma once
 
-#include <expected>
-#include <string>
-#include <optional>
-#include <vector>
+// *** Standard Includes ***
 #include <algorithm>
+#include <expected>
+#include <optional>
 #include <ranges>
+#include <stdexcept>
+#include <string>
+#include <vector>
 #include <unordered_map>
-#include <range/v3/algorithm/find_first_of.hpp>
-
 
 namespace cosmos::inline v1
 {
@@ -51,7 +51,7 @@ namespace cosmos::inline v1
         using root_name_str = std::string;
         using name_str      = std::string;
         using adjacency_list_type = std::unordered_map<root_name_str, std::vector<name_str>>;
-        using color_map_type = std::unordered_map<name_str, graph_color>;
+        using color_map_type      = std::unordered_map<name_str, graph_color>;
 
     public:
         directed_acyclic_graph() = default;
@@ -78,6 +78,26 @@ namespace cosmos::inline v1
         {
             return adjacency_list.contains(task_name);
         }
+
+        template<class NameSet>
+        requires requires(NameSet const s, std::string const str) { s.contains(str); }
+        [[nodiscard]] auto is_task_ready(NameSet const &completed, std::string const &name) const noexcept -> bool
+        {
+            try
+            {
+                auto const &deps = dependencies_of(name);
+                for (auto const &dep: deps)
+                {
+                    if (not completed.contains(dep))
+                        return false;
+                }
+                return true;
+            }
+            catch (std::out_of_range)
+            {
+                return false;
+            }
+        };
 
         inline auto push_task(
             name_str const& task_name,
