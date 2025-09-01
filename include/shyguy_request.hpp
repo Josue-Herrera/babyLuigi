@@ -257,9 +257,9 @@ namespace nlohmann {
             } else if (j.contains("type") and j.contains("value")) {
                 switch (auto const type = j.at("type").get<std::string>(); cosmos::to_request_type(type)) {
                     case cosmos::request_type::dag:
-                        request.data = j.get<cosmos::shyguy_dag>(); break;
+                        request.data = j.at("value").get<cosmos::shyguy_dag>(); break;
                     case cosmos::request_type::task:
-                        request.data = j.get<cosmos::shyguy_task>(); break;
+                        request.data = j.at("value").get<cosmos::shyguy_task>(); break;
                     case cosmos::request_type::unset:
                     case cosmos::request_type::unknown:
                     default: {
