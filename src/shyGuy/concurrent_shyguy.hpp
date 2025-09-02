@@ -78,7 +78,7 @@ namespace cosmos::inline v1
         bool has_unique_name(shyguy_task const &request) const
         {
             if (const auto iter = dags.find(request.associated_dag); iter != dags.end())
-                return iter->second.contains(request.name);
+                return not iter->second.contains(request.name);
             return false;
         }
 

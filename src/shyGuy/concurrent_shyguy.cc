@@ -28,10 +28,12 @@ namespace cosmos::inline v1
     auto prefix_folder()
     {
 #ifdef _WIN32
-        auto app_data = std::getenv("APPDATA");
-        return std::filesystem::path(app_data);
+        if (auto const app_data = std::getenv("APPDATA"))
+            return std::filesystem::path(app_data);
+        else 
+            return std::filesystem::path("C:/ProgramData");
 #else
-        auto app_data = std::getenv("/opt");
+        auto app_data = std::getenv("$COSMOS_HOME");
         return std::filesystem::path(app_data);
 #endif
     }
