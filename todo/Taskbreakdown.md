@@ -1,29 +1,34 @@
-# ShyGuy Roadmap & Task Breakdown
+# ShyGuy (DAG Orchestrator) Roadmap & Task Breakdown
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
 
-This document tracks current state, gaps, and an actionable plan to evolve ShyGuy (the server-side component) toward a DAG orchestrator in C++.
-
-## Gaps & Notable Issues
-- Networking server not implemented: no ZMQ router/dealer in `shyguy` for receiving requests or responding.
-- JSON adapter bug: `from_json` for `shyguy_request` reads from the whole object instead of `j["value"]`.
-- Task/DAG execution path incomplete:
-  - `concurrent_shyguy::execute(dag)` enqueues task runners but returns `not_currently_supported` and uses a placeholder command.
-  - `concurrent_shyguy::execute(task)` unimplemented behavior.
-  - `shy_executioner` constructor is private by default; make it constructible as needed when integrating.
-- Scheduling stubbed: `next_scheduled_dag()` returns a constant placeholder; no cron parsing or wakeup thread.
-- Content paths: `prefix_folder()` uses `getenv("/opt")` on non-Windows (invalid). Should use a sensible base (e.g., XDG dirs or `/var/lib/cosmos/shyguy`).
-- Name uniqueness check for tasks likely inverted: `has_unique_name(shyguy_task)` returns `dag.contains(name)` instead of `!contains(name)`.
-- TUI wiring: `interactive_shyguy` enqueue/actions are placeholders and not connected to actual create/run/remove requests.
-- Persistence on startup: no manifest scanning to rebuild DAG/task registry.
-- Tests: no unit/integration tests yet.
-
-## Milestones & Tasks (Prioritized)
-
-### M0: Quick Stabilization (Bugs/Fixes)
-- [x] Replace non-Windows `prefix_folder()` with a correct directory strategy 
-  - Choose storage roots:
-    - Windows: `%APPDATA%/cosmos/shyguy`.
-    - Linux/macOS: `$XDG_DATA_HOME/cosmos/shyguy` or fallback to `~/.local/share/cosmos/shyguy`.
-    - Run folders under `.../runs/<dag>/<date>/<uuid>`; content under `.../content/...`.
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
+----
 
 ### M1: Command Routing & Networking
 - [x] Define wire format (JSON) for commands: `{ command: "create|remove|execute|snapshot", type: "dag|task", value: {...} }`.

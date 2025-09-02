@@ -4,6 +4,7 @@
 #include "graph/graph.hpp"
 #include "shyguy_request.hpp"
 #include "blocking_queue.hpp"
+#include "fwd_vocabulary.hpp"
 
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
@@ -38,12 +39,10 @@ namespace cosmos::inline v1
         using root_name_str = std::string;
         using name_str      = std::string;
         using cron_tab_str  = std::string;
-        using task_request    = std::pair<std::vector<task_runner>, directed_acyclic_graph>;
-        using request_queue_t = std::shared_ptr<blocking_queue<task_request>>;
         using logger_t = std::shared_ptr<spdlog::logger>;
     public:
-        explicit concurrent_shyguy(request_queue_t rq):
-            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)}
+        explicit concurrent_shyguy(request_queue_t rq, terminator_t t):
+            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)}, running{std::move(t)}
          {}
 
 
@@ -53,7 +52,7 @@ namespace cosmos::inline v1
          * @param type the enum that determines what type it is.
          * @param request the request holding the data.
          */
-        auto process(command_enum type, cosmos::shyguy_request const &request) noexcept -> command_result_type;
+        auto process(cosmos::shyguy_request const &request) noexcept -> command_result_type;
 
         auto create(shyguy_dag const &dag) noexcept -> command_result_type;
         auto remove(shyguy_dag const &dag) noexcept -> command_result_type;
@@ -65,7 +64,7 @@ namespace cosmos::inline v1
         auto execute(shyguy_task const &task) noexcept -> command_result_type;
         auto snapshot(shyguy_task const &task) noexcept -> command_result_type;
 
-        auto process(command_enum, std::monostate) const noexcept -> command_result_type;
+        auto process(std::monostate) const noexcept -> command_result_type;
         auto next_scheduled_dag() const noexcept -> std::optional<notification_type>;
 
     private:
@@ -99,6 +98,7 @@ namespace cosmos::inline v1
         mutable std::recursive_mutex mutex{};
         std::shared_ptr<spdlog::logger> logger;
         request_queue_t request_queue;
+        terminator_t    running;
         id_generator uuid_generator{};
     };
 
@@ -154,7 +154,8 @@ namespace cosmos::inline v1
                     continue;
                 }
 
-                shy_guy.process(command_enum::execute, notified.associated_request);
+                notified.associated_request.command = command_enum::execute;
+                shy_guy.process(notified.associated_request);
 
                 auto const next_scheduled_time = shy_guy.next_scheduled_dag();
                 if (not next_scheduled_time.has_value())

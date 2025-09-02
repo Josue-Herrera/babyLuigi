@@ -13,14 +13,13 @@
 #include <thread>
 #include <vector>
 
-
 namespace cosmos::inline v1 {
 	
 class shyguy {
 
 public:
 	auto run() noexcept -> void;
-	static auto test_run() noexcept -> void;
+	auto test_run() noexcept -> void;
 
 	explicit shyguy(shy_arguments arguments) :
 		arguments{std::move(arguments)}{}

@@ -38,14 +38,14 @@ namespace cosmos::inline v1
 #endif
     }
 
-    auto concurrent_shyguy::process(command_enum type, shyguy_request const &request) noexcept -> command_result_type
+    auto concurrent_shyguy::process(shyguy_request const &request) noexcept -> command_result_type
     {
         std::lock_guard lock(mutex);
         return request.data | match
         {
-            [this, type](requestable auto const& dag_or_task) -> command_result_type
+            [this, command = request.command](requestable auto const& dag_or_task) -> command_result_type
             {
-                switch (type)
+                switch (command)
                 {
                     case command_enum::create: return create(dag_or_task);
                     case command_enum::remove: return remove(dag_or_task);
@@ -54,7 +54,7 @@ namespace cosmos::inline v1
                     default: return { std::unexpected(command_error::unknown_command) };
                 }
             },
-            [this, type](std::monostate const m) { return process(type, m); }
+            [this](std::monostate const m) { return process(m); }
         };
     }
 
@@ -196,7 +196,7 @@ namespace cosmos::inline v1
         return std::unexpected(command_error::not_currently_supported);
     }
 
-    auto concurrent_shyguy::process(command_enum, std::monostate) const noexcept -> command_result_type
+    auto concurrent_shyguy::process(std::monostate) const noexcept -> command_result_type
     {
         logger->info("Monostate input. This should never happen.");
         return std::unexpected(command_error::monostate_reached);

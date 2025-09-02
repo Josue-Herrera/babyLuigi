@@ -7,11 +7,10 @@
 // *** 3rd Party Includes ***
 #include <exec/async_scope.hpp>
 #include <exec/static_thread_pool.hpp>
-#include <range/v3/algorithm/for_each.hpp>
-#include <range/v3/view/chunk.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
+// *** Standard Includes ***
 #include <chrono>
 #include <graph/graph.hpp>
 #include <mutex>
