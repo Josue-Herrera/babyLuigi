@@ -229,26 +229,19 @@ namespace cosmos::inline v1 {
 
 } // namespace cosmos::inline v1
 
-
 namespace nlohmann {
     template <>
     struct adl_serializer<std::monostate> {
-        static void to_json(json& j, const std::monostate&) { j = nullptr; }
-        static void from_json(const json&, const std::monostate&) {}
+        static void to_json(json& j, std::monostate const&) { j = nullptr; }
+        static void from_json(const json&, std::monostate const&) {}
     };
 
     template <>
     struct adl_serializer<cosmos::shyguy_request> {
         static void to_json(json& j, cosmos::shyguy_request const& request) {
-            auto to_json_internal = [&]<typename T0>(T0&& value) {
-                const auto request_enum = static_cast<cosmos::request_type>(request.data.index());
-                j["type"] = cosmos::to_string_view(request_enum);
-                if constexpr (not std::is_same_v<std::monostate, T0>) {
-                    j["value"] = std::forward<T0>(value);
-                }
-            };
-
-            std::visit(to_json_internal, request.data);
+            const auto request_enum = static_cast<cosmos::request_type>(request.data.index());
+            j["type"] = cosmos::to_string_view(request_enum);
+            std::visit([&](auto const& value){ j = value; }, request.data);
         }
 
         static void from_json(json const& j, cosmos::shyguy_request& request) {

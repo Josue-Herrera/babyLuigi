@@ -19,14 +19,14 @@ This document tracks current state, gaps, and an actionable plan to evolve ShyGu
 ## Milestones & Tasks (Prioritized)
 
 ### M0: Quick Stabilization (Bugs/Fixes)
-- [ ] Replace non-Windows `prefix_folder()` with a correct directory strategy 
+- [x] Replace non-Windows `prefix_folder()` with a correct directory strategy 
   - Choose storage roots:
     - Windows: `%APPDATA%/cosmos/shyguy`.
     - Linux/macOS: `$XDG_DATA_HOME/cosmos/shyguy` or fallback to `~/.local/share/cosmos/shyguy`.
     - Run folders under `.../runs/<dag>/<date>/<uuid>`; content under `.../content/...`.
 
 ### M1: Command Routing & Networking
-- [ ] Define wire format (JSON) for commands: `{ command: "create|remove|execute|snapshot", type: "dag|task", value: {...} }`.
+- [x] Define wire format (JSON) for commands: `{ command: "create|remove|execute|snapshot", type: "dag|task", value: {...} }`.
 - [ ] Implement ZMQ Router in `shyguy::run()` to accept requests and return results.
 - [ ] Add request parsing → `shyguy_request` + `command_enum` mapping.
 - [ ] Connect to `concurrent_shyguy::process()` and return `command_result_type` to client.
