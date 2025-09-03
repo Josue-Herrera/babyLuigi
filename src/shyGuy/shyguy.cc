@@ -85,10 +85,10 @@ namespace cosmos::inline v1 {
 		    }
 		}*/
 
-		auto shyguy::run() noexcept -> void {
-		    auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
-		    auto request_queue = std::make_shared<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>();
-		    auto shyguy        = concurrent_shyguy{request_queue, std::make_shared<std::atomic_bool>(false)};
+        auto shyguy::run() noexcept -> void {
+            auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
+            auto request_queue = std::make_shared<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>();
+            auto shyguy        = concurrent_shyguy{request_queue, std::make_shared<std::atomic_bool>(false), storage_};
 
 
 		    // auto io_queue             = std::make_shared<blocking_queue<shyguy_request>>();
@@ -117,11 +117,11 @@ namespace cosmos::inline v1 {
 
         auto shyguy::test_run() noexcept -> void
         {
-		    auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
-		    auto request_queue = std::make_shared<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>();
-			auto terminator    = std::make_shared<std::atomic_bool>(false);
-		    auto shyguy        = concurrent_shyguy{request_queue, terminator};
-			auto router        = zmq_router{request_queue, terminator};
+            auto file_logger   = spdlog::basic_logger_mt("shyguy_logger", "logs/shy-log.txt", true);
+            auto request_queue = std::make_shared<blocking_queue<std::pair<std::vector<task_runner>, directed_acyclic_graph>>>();
+            auto terminator    = std::make_shared<std::atomic_bool>(false);
+            auto shyguy        = concurrent_shyguy{request_queue, terminator, storage_};
+            auto router        = zmq_router{request_queue, terminator};
 			
 		    auto io_queue         = std::make_shared<blocking_queue<shyguy_request>>();
 		    auto cosmos_pool      = exec::static_thread_pool{ std::thread::hardware_concurrency() };

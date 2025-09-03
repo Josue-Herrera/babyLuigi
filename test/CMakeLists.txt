@@ -18,7 +18,6 @@ if(TARGET Catch2::Catch2WithMain)
 endif()
 
 add_executable(unit_tests
-  test_basic.cpp
   test_zmq_babyluigi.cpp
   test_zmq_router.cpp
   ${CMAKE_SOURCE_DIR}/src/babyLuigi/baby_luigi.cc

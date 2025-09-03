@@ -5,6 +5,7 @@
 #include "shyguy_request.hpp"
 #include "blocking_queue.hpp"
 #include "fwd_vocabulary.hpp"
+#include "storage.hpp"
 
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
@@ -41,8 +42,8 @@ namespace cosmos::inline v1
         using cron_tab_str  = std::string;
         using logger_t = std::shared_ptr<spdlog::logger>;
     public:
-        explicit concurrent_shyguy(request_queue_t rq, terminator_t t):
-            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)}, running{std::move(t)}
+        explicit concurrent_shyguy(request_queue_t rq, terminator_t t, std::shared_ptr<istorage> storage):
+            logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)}, running{std::move(t)}, storage{std::move(storage)}
          {}
 
 
@@ -100,6 +101,7 @@ namespace cosmos::inline v1
         request_queue_t request_queue;
         terminator_t    running;
         id_generator uuid_generator{};
+        std::shared_ptr<istorage> storage{};
     };
 
     class notify_updater

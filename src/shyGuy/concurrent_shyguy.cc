@@ -7,6 +7,7 @@
 
 #include <ranges>
 #include <fstream>
+#include <span>
 
 namespace cosmos::inline v1
 {
@@ -76,6 +77,10 @@ namespace cosmos::inline v1
             return std::unexpected(command_error::dag_insertion_failed);
         }
 
+        // persist into storage if available
+        if (storage) {
+            (void)storage->dags()->upsert_dag(dag, std::nullopt);
+        }
         return log_return("created dag {}", dag.name);
     }
 
@@ -86,6 +91,10 @@ namespace cosmos::inline v1
             if (has_schedule(dag))
                 schedules.erase(dag.name);
 
+           // remove from storage if available
+           if (storage) {
+               (void)storage->dags()->erase_dag(dag.name, std::nullopt);
+           }
            return log_return("removed dag {}", dag.name);
         }
 
@@ -158,6 +167,22 @@ namespace cosmos::inline v1
                 logger->warn("Failed to create task file at {}", content_file.string());
                 return std::unexpected(command_error::task_file_creation_failed);
             }
+
+            // also persist to storage
+            if (storage) {
+                auto bytes = std::as_bytes(std::span{task.file_content->data(), task.file_content->size()});
+                auto id = storage->blobs()->put_blob(bytes);
+                if (id) {
+                    (void)storage->tasks()->upsert_task(task, std::nullopt, *id);
+                } else {
+                    spdlog::warn("blob store put failed for task {}", task.name);
+                    (void)storage->tasks()->upsert_task(task, std::nullopt, std::nullopt);
+                }
+            }
+        } else {
+            if (storage) {
+                (void)storage->tasks()->upsert_task(task, std::nullopt, std::nullopt);
+            }
         }
 
         return log_return("Created New Task {}", task.name);
@@ -170,6 +195,9 @@ namespace cosmos::inline v1
             if (auto const removed = dag->second.remove_task(task.name); not removed)
                 return std::unexpected(static_cast<command_error>(removed.error()));
 
+        }
+        if (storage) {
+            (void)storage->tasks()->erase_task(task.associated_dag, task.name, std::nullopt);
         }
         return log_return("Removed Task {}", task.name);
     }
