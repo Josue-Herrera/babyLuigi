@@ -1,6 +1,7 @@
 #pragma once
 
-#include "task.hpp"
+#include "shyguy_request.hpp"
+#include "define_arguements.hpp"
 #include <string>
 #include <vector>
 
@@ -15,9 +16,9 @@ namespace cosmos
             std::string server_address{"127.0.0.1"};
         };
 
-        [[nodiscard]] auto valid(task const&) noexcept -> bool;
+        [[nodiscard]] auto valid(shyguy_request const&) noexcept -> bool;
 
-        [[nodiscard]] auto submit_task_request(task const& task,  shy_guy_info const& info) noexcept -> bool;
+        [[nodiscard]] auto submit_task_request(shyguy_request const& task,  shy_guy_info const& info) noexcept -> bool;
 
         [[nodiscard]] auto download_contents(std::string const& path) noexcept -> std::string;
 
@@ -34,4 +35,10 @@ namespace cosmos
 " ░▒▓███████▓▒░  ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░     ░▒▓█▓▒░           ░▒▓████████▓▒░  ░▒▓██████▓▒░  ░▒▓█▓▒░  ░▒▓██████▓▒░  ░▒▓█▓▒░\n";
 */
     }
+}
+
+namespace cosmos
+{
+    // High-level entry point to parse CLI, build a request, validate and submit it.
+    auto run_cli_and_submit(int argc, const char** argv) -> int;
 }

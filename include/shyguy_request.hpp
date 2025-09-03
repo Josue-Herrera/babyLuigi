@@ -323,7 +323,7 @@ namespace nlohmann
             const auto request_enum = static_cast<cosmos::request_type>(request.data.index());
             j["type"] = cosmos::to_string_view(request_enum);
             j["command"] = cosmos::to_string_view(request.command);
-            std::visit([&](auto const &value) { j = value; }, request.data);
+            std::visit([&](auto const &value) { j["value"] = value; }, request.data);
         }
 
         static void from_json(json const &j, cosmos::shyguy_request &request)

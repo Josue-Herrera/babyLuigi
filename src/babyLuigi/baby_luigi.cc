@@ -12,6 +12,8 @@
 #include <filesystem>
 #include <zmq_addon.hpp>
 #include <random>
+#include <CLI/CLI.hpp>
+#include <fmt/format.h>
 
 namespace cosmos
 {
@@ -63,21 +65,24 @@ namespace cosmos
             return true;
         }
 
-        auto valid(shyguy_request const& task) noexcept -> bool
+        auto valid(shyguy_request const& request) noexcept -> bool
         {
-            if(task.filename)
+            if (auto const* task = std::get_if<shyguy_task>(&request.data))
             {
-                std::filesystem::path file_path(*task.filename);
-                if (not std::filesystem::exists(file_path))
+                if (task->filename)
                 {
-                    spdlog::error("File does not exist: {}", *task.filename);
-                    return false;
-                }
+                    std::filesystem::path file_path(*task->filename);
+                    if (not std::filesystem::exists(file_path))
+                    {
+                        spdlog::error("File does not exist: {}", *task->filename);
+                        return false;
+                    }
 
-                if(not std::filesystem::is_regular_file(file_path))
-                {
-                    spdlog::error("This is not a regular file: {}", *task.filename);
-                    return false;
+                    if (not std::filesystem::is_regular_file(file_path))
+                    {
+                        spdlog::error("This is not a regular file: {}", *task->filename);
+                        return false;
+                    }
                 }
             }
             return true;
@@ -94,4 +99,46 @@ namespace cosmos
             return {};
         }
     } // namespace v1
-} // namespace jx
+} // namespace cosmos
+
+namespace cosmos
+{
+    using namespace cosmos::v1;
+
+    static void attach_baby_cli(CLI::App& app, baby_cli_state& state)
+    {
+        add_babyluigi_subcommands(app, state);
+    }
+
+    auto run_cli_and_submit(int argc, const char** argv) -> int
+    {
+        CLI::App app{fmt::format("{}\nversion {}", cosmos::baby_luigi_banner, "0.0.0")};
+        app.require_subcommand(1);
+
+        baby_cli_state state{};
+        attach_baby_cli(app, state);
+
+        try {
+            CLI11_PARSE(app, argc, argv);
+        } catch (const CLI::ParseError& e) {
+            return app.exit(e);
+        }
+
+        // If task has a file, populate contents
+        if (auto* task = std::get_if<shyguy_task>(&state.request.data))
+        {
+            if (task->filename)
+            {
+                if (!cosmos::v1::valid(state.request))
+                    return EXIT_FAILURE;
+
+                task->file_content = cosmos::v1::download_contents(task->filename.value());
+            }
+        }
+
+        if (!cosmos::v1::submit_task_request(state.request, state.info))
+            return EXIT_FAILURE;
+
+        return EXIT_SUCCESS;
+    }
+}
