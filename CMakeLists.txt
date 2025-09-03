@@ -25,14 +25,9 @@ include(cmake/SystemLink.cmake)
 add_subdirectory(libraries)
 add_subdirectory(src)
 
-# Don't even look at tests if we're not top level
-# if(NOT PROJECT_IS_TOP_LEVEL)
-#   return()
-# endif()
+# Adding the tests
+include(CTest)
 
-# # Adding the tests:
-# include(CTest)
-
-# if(BUILD_TESTING)
-#   add_subdirectory(test)
-# endif()
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()

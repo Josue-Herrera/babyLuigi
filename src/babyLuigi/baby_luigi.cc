@@ -52,17 +52,17 @@ namespace cosmos
             requester.connect(std::string("tcp://") + info.server_address + ":" + info.port);
             requester.set(zmq::sockopt::routing_id, create_random_router_id());
             requester.send(create_request(task), zmq::send_flags::none);
-            zmq::message_t test{ };
-            std::array message_pack {zmq::message_t{}, zmq::message_t{}};
 
-            if (auto result = zmq::recv_multipart(requester, message_pack.data()); result) {
-                auto const binary_request = message_pack[1].to_string_view();
-                auto const unpacked_json  = json::from_bson(binary_request);
-                auto const request         = unpacked_json.template get<cosmos::shyguy_request>();
-                spdlog::info("Received reply [ size={} msg={} ]", message_pack.size(),  request.name);
+            // Expect an ACK (single frame visible to DEALER) like "OK" or "ERROR"
+            std::vector<zmq::message_t> parts;
+            if (auto const result = zmq::recv_multipart(requester, std::back_inserter(parts)); result && !parts.empty()) {
+                auto const ack = parts.front().to_string_view();
+                spdlog::info("Received ACK: {}", std::string{ack});
+                return ack == std::string_view{"OK"};
             }
 
-            return true;
+            spdlog::warn("No ACK received from shyguy");
+            return false;
         }
 
         auto valid(shyguy_request const& request) noexcept -> bool

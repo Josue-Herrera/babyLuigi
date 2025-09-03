@@ -10,11 +10,7 @@ namespace cosmos
     inline namespace v1
     {
 
-        struct shy_guy_info
-        {
-            std::string port {"90909"};
-            std::string server_address{"127.0.0.1"};
-        };
+
 
         [[nodiscard]] auto valid(shyguy_request const&) noexcept -> bool;
 

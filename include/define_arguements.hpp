@@ -12,7 +12,14 @@
 #include "shyguy_request.hpp"
 
 
-namespace cosmos {
+namespace cosmos::inline v1
+{
+
+    struct shy_guy_info
+    {
+        std::string port {"90909"};
+        std::string server_address{"127.0.0.1"};
+    };
 
     struct shy_arguments {
         std::string port{ "90909" };
@@ -169,6 +176,6 @@ namespace cosmos {
         });
     }
 
-} // cosmos
+} // namespace cosmos::inline v1
 
 #endif //ARGUMENT_PARSING_HPP

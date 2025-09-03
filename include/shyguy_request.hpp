@@ -153,7 +153,7 @@ namespace cosmos::inline v1
         std::optional<std::string> filename{};
         std::optional<std::string> file_content{};
         std::optional<std::vector<std::string>> dependency_names{};
-        int file_contents;
+        int file_contents{};
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(shyguy_task, name, associated_dag, type, filename, file_content,
                                        dependency_names)
@@ -192,6 +192,14 @@ namespace cosmos::inline v1
             static_assert(is_dag_type::value || is_task_type::value);
 
             data.emplace(value);
+        }
+
+        [[nodiscard]] inline auto name() const noexcept -> std::string
+        {
+            return data | match {
+              [](requestable auto const &r) { return r.name; },
+              [](std::monostate) { return std::string{"monostate"}; }
+            };
         }
 
         command_enum command{};
