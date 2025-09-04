@@ -3,7 +3,9 @@
 // *** Standard Includes ***
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <vector>
+
 
 namespace cosmos::inline v1
 {
@@ -11,10 +13,11 @@ namespace cosmos::inline v1
     class task_runner;
     class shyguy_request;
     template <typename T> class blocking_queue;
+    class fs_storage;
 
     using terminator_t     = std::shared_ptr<std::atomic_bool>;
     using task_request     = std::pair<std::vector<task_runner>, directed_acyclic_graph>;
     using request_queue_t  = std::shared_ptr<blocking_queue<task_request>>;
     using response_queue_t = std::shared_ptr<blocking_queue<shyguy_request>>;
-
+    using data_storage     = std::shared_ptr<fs_storage>;
 } // namespace cosmos::inline v1

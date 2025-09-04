@@ -20,6 +20,7 @@ endif()
 add_executable(unit_tests
   test_zmq_babyluigi.cpp
   test_zmq_router.cpp
+  test_fs_storage.cpp
   ${CMAKE_SOURCE_DIR}/src/babyLuigi/baby_luigi.cc
   ${CMAKE_SOURCE_DIR}/src/shyGuy/zmq_router.cc
 )
@@ -31,6 +32,7 @@ target_include_directories(unit_tests PRIVATE
 
 target_link_libraries(unit_tests PRIVATE
   Catch2::Catch2WithMain
+  storage
   CLI11::CLI11
   STDEXEC::stdexec
   fmt::fmt

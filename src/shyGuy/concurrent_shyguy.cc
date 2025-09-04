@@ -14,14 +14,14 @@ namespace cosmos::inline v1
     auto get_date()
     {
         // Get current date
-        auto const now   = std::chrono::system_clock::now();
+        auto const now = std::chrono::system_clock::now();
         auto const today = std::chrono::floor<std::chrono::days>(now);
-        std::chrono::year_month_day ymd {std::chrono::sys_days{today}};
+        std::chrono::year_month_day ymd{std::chrono::sys_days{today}};
         // Format: year_month_day
         std::string date_folder = std::format(
-            "{:%Y_%m_%d}",
-            ymd
-        );
+                "{:%Y_%m_%d}",
+                ymd
+                );
 
         return date_folder;
     }
@@ -31,7 +31,7 @@ namespace cosmos::inline v1
 #ifdef _WIN32
         if (auto const app_data = std::getenv("APPDATA"))
             return std::filesystem::path(app_data);
-        else 
+        else
             return std::filesystem::path("C:/ProgramData");
 #else
         auto app_data = std::getenv("$COSMOS_HOME");
@@ -43,20 +43,25 @@ namespace cosmos::inline v1
     {
         std::lock_guard lock(mutex);
         return request.data | match
-        {
-            [this, command = request.command](requestable auto const& dag_or_task) -> command_result_type
-            {
-                switch (command)
-                {
-                    case command_enum::create: return create(dag_or_task);
-                    case command_enum::remove: return remove(dag_or_task);
-                    case command_enum::execute: return execute(dag_or_task);
-                    case command_enum::snapshot: return snapshot(dag_or_task);
-                    default: return { std::unexpected(command_error::unknown_command) };
-                }
-            },
-            [this](std::monostate const m) { return process(m); }
-        };
+               {
+                       [this, command = request.command](requestable auto const &dag_or_task) -> command_result_type
+                       {
+                           switch (command)
+                           {
+                               case command_enum::create:
+                                   return create(dag_or_task);
+                               case command_enum::remove:
+                                   return remove(dag_or_task);
+                               case command_enum::execute:
+                                   return execute(dag_or_task);
+                               case command_enum::snapshot:
+                                   return snapshot(dag_or_task);
+                               default:
+                                   return {std::unexpected(command_error::unknown_command)};
+                           }
+                       },
+                       [this](std::monostate const m) { return process(m); }
+               };
     }
 
     auto concurrent_shyguy::create(shyguy_dag const &dag) noexcept -> command_result_type
@@ -78,8 +83,9 @@ namespace cosmos::inline v1
         }
 
         // persist into storage if available
-        if (storage) {
-            (void)storage->dags()->upsert_dag(dag, std::nullopt);
+        if (storage)
+        {
+            (void) storage->dags().upsert_dag(dag, std::nullopt);
         }
         return log_return("created dag {}", dag.name);
     }
@@ -91,11 +97,12 @@ namespace cosmos::inline v1
             if (has_schedule(dag))
                 schedules.erase(dag.name);
 
-           // remove from storage if available
-           if (storage) {
-               (void)storage->dags()->erase_dag(dag.name, std::nullopt);
-           }
-           return log_return("removed dag {}", dag.name);
+            // remove from storage if available
+            if (storage)
+            {
+                (void) storage->dags().erase_dag(dag.name, std::nullopt);
+            }
+            return log_return("removed dag {}", dag.name);
         }
 
         return std::unexpected(command_error::dag_deletion_failed);
@@ -104,7 +111,7 @@ namespace cosmos::inline v1
     auto concurrent_shyguy::execute(shyguy_dag const &dag) noexcept -> command_result_type
     {
         auto const run_folder = create_run_folder("dags/" + dag.name);
-        auto const dag_iter   = dags.find(dag.name);
+        auto const dag_iter = dags.find(dag.name);
         if (dag_iter == end(dags))
             return std::unexpected(command_error::dag_not_found);
 
@@ -113,19 +120,20 @@ namespace cosmos::inline v1
         if (not ordered_tasks)
             return std::unexpected(command_error::task_creates_cycle);
 
-        auto const& order = ordered_tasks.value();
+        auto const &order = ordered_tasks.value();
 
         request_queue->enqueue
         ({
-            std::views::transform(order, [this](auto const& task_name)
+            std::views::transform(order, [this](auto const &task_name)
             {
                 task_runner runner{};
                 runner.name = task_name;
                 runner.contents = find_content("tasks/" + task_name);
-                runner.task_function = [this] () noexcept -> void
+                runner.task_function = [this]() noexcept -> void
                 {
-                    std::lock_guard lock (mutex);
-                    std::string const command {"./task_executable"}; // Placeholder for actual command
+                    std::lock_guard lock(mutex);
+                    std::string const command{"./task_executable"};
+                    // Placeholder for actual command
                     if (auto output = execute_command(command); output)
                         logger->info("Task executed successfully with output: {}", output.value());
                     else
@@ -133,9 +141,8 @@ namespace cosmos::inline v1
                 };
                 return runner;
             }) | std::ranges::to<std::vector>(),
-
             dag_iter->second
-            }
+        }
         );
 
         return std::unexpected(command_error::not_currently_supported);
@@ -154,12 +161,12 @@ namespace cosmos::inline v1
             return std::unexpected(static_cast<command_error>(inserted.error()));
 
         auto const content_folder = create_content_folder("tasks/" + task.name);
-        if(task.file_content and task.filename)
+        if (task.file_content and task.filename)
         {
             auto const content_file = content_folder / "content";
             if (std::ofstream file(content_file, std::ios::binary); file.is_open())
             {
-                file.write(std::data(*task.file_content), std::size(*task.file_content));
+                file.write(std::data(*task.file_content), std::ssize(*task.file_content));
                 file.close();
             }
             else
@@ -169,26 +176,33 @@ namespace cosmos::inline v1
             }
 
             // also persist to storage
-            if (storage) {
-                auto bytes = std::as_bytes(std::span{task.file_content->data(), task.file_content->size()});
-                auto id = storage->blobs()->put_blob(bytes);
-                if (id) {
-                    (void)storage->tasks()->upsert_task(task, std::nullopt, *id);
-                } else {
+            if (storage)
+            {
+                const auto bytes = std::as_bytes(
+                        std::span{std::data(*task.file_content), std::size(*task.file_content)});
+                if (auto id = storage->blobs().put_blob(bytes))
+                {
+                    (void) storage->tasks().upsert_task(task, *id);
+                }
+                else
+                {
                     spdlog::warn("blob store put failed for task {}", task.name);
-                    (void)storage->tasks()->upsert_task(task, std::nullopt, std::nullopt);
+                    (void) storage->tasks().upsert_task(task);
                 }
             }
-        } else {
-            if (storage) {
-                (void)storage->tasks()->upsert_task(task, std::nullopt, std::nullopt);
+        }
+        else
+        {
+            if (storage)
+            {
+                (void) storage->tasks().upsert_task(task);
             }
         }
 
         return log_return("Created New Task {}", task.name);
     }
 
-    auto concurrent_shyguy::remove(shyguy_task const& task) noexcept -> command_result_type
+    auto concurrent_shyguy::remove(shyguy_task const &task) noexcept -> command_result_type
     {
         if (auto const dag = dags.find(task.associated_dag); dag != std::end(dags))
         {
@@ -196,8 +210,9 @@ namespace cosmos::inline v1
                 return std::unexpected(static_cast<command_error>(removed.error()));
 
         }
-        if (storage) {
-            (void)storage->tasks()->erase_task(task.associated_dag, task.name, std::nullopt);
+        if (storage)
+        {
+            (void) storage->tasks().erase_task(task.associated_dag, task.name);
         }
         return log_return("Removed Task {}", task.name);
     }
@@ -209,16 +224,17 @@ namespace cosmos::inline v1
         auto const dag = dags.find(task.associated_dag);
         if (dag == std::end(dags))
             return std::unexpected(command_error::dag_not_found);
-        auto const run_folder    = create_run_folder("dags/"s.append(dag->second.view_name()));
+        auto const run_folder = create_run_folder("dags/"s.append(dag->second.view_name()));
         auto const ordered_tasks = dag->second.run_order();
         if (not ordered_tasks)
             return std::unexpected(command_error::task_creates_cycle);
 
-        auto const& order = ordered_tasks.value();
+        auto const &order = ordered_tasks.value();
 
 
         return std::unexpected(command_error::not_currently_supported);
     }
+
     auto concurrent_shyguy::snapshot(shyguy_task const &) noexcept -> command_result_type
     {
         return std::unexpected(command_error::not_currently_supported);
@@ -238,16 +254,17 @@ namespace cosmos::inline v1
                                   .command_type = command_enum::execute}};
     }
 
-     auto concurrent_shyguy::create_content_json(std::filesystem::path const& app, shyguy_dag const &request) noexcept -> std::filesystem::path
+    auto concurrent_shyguy::create_content_json(std::filesystem::path const &app,
+                                                shyguy_dag const &request) noexcept -> std::filesystem::path
     {
         // This might be better in a different file. the definition of the content file
         const nlohmann::json content_json
         {
-            {"created_at", get_date()},
-            {"tasks", nlohmann::json::array()},
-            {"id" , uuids::to_string(uuid_generator.generate())},
-            {"dag_name", request.name},
-            {"dag_schedule", request.schedule.value_or(std::string{})},
+                {"created_at", get_date()},
+                {"tasks", nlohmann::json::array()},
+                {"id", uuids::to_string(uuid_generator.generate())},
+                {"dag_name", request.name},
+                {"dag_schedule", request.schedule.value_or(std::string{})},
         };
 
         auto content_file = app / "dag_manifest.json";
@@ -266,10 +283,10 @@ namespace cosmos::inline v1
         return content_file;
     }
 
-    auto concurrent_shyguy::create_run_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path
+    auto concurrent_shyguy::create_run_folder(std::filesystem::path const &app) noexcept -> std::filesystem::path
     {
         auto run_folder = prefix_folder() / "cosmos" / "shyguy" / app
-            / get_date() / uuids::to_string(uuid_generator.generate());
+                          / get_date() / uuids::to_string(uuid_generator.generate());
 
         if (std::filesystem::exists(run_folder))
             return run_folder;
@@ -278,9 +295,9 @@ namespace cosmos::inline v1
         return run_folder;
     }
 
-    auto concurrent_shyguy::find_content(std::filesystem::path const& suffix) noexcept -> std::vector<char>
+    auto concurrent_shyguy::find_content(std::filesystem::path const &suffix) noexcept -> std::vector<char>
     {
-        auto content = prefix_folder() / "cosmos" / "shyguy" / "content" / suffix / "content";
+        const auto content = prefix_folder() / "cosmos" / "shyguy" / "content" / suffix / "content";
 
         // ignore extensions for now, since we don't have it.
         if (not std::filesystem::exists(content))
@@ -289,10 +306,10 @@ namespace cosmos::inline v1
         if (std::ifstream file(content, std::ios::binary); not file.is_open())
             return {};
         else
-            return { std::istreambuf_iterator(file), std::istreambuf_iterator<char>() };
+            return {std::istreambuf_iterator(file), std::istreambuf_iterator<char>()};
     }
 
-    auto concurrent_shyguy::create_content_folder(std::filesystem::path const& app) noexcept -> std::filesystem::path
+    auto concurrent_shyguy::create_content_folder(std::filesystem::path const &app) noexcept -> std::filesystem::path
     {
         auto run_folder = prefix_folder() / "cosmos" / "shyguy" / "content" / app;
 

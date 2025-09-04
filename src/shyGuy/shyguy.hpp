@@ -1,8 +1,8 @@
 #pragma once
 
 // *** Project Includes ***
-#include "concurrent_shyguy.hpp"
 #include "fs_storage.hpp"
+#include "concurrent_shyguy.hpp"
 #include "define_arguements.hpp"
 
 // *** 3rd Party Includes ***
@@ -27,8 +27,8 @@ public:
         arguments{std::move(arguments)}
     {
         // Default storage root under local data directory
-        std::filesystem::path root = std::filesystem::path{"data"};
-        storage_ = make_fs_storage(root);
+        auto root = std::filesystem::path{"data"};
+        storage_ = std::make_shared<fs_storage>(root);
     }
 
     ~shyguy() = default;
@@ -49,9 +49,7 @@ private:
   std::thread graph_thread_;
 
   std::atomic_bool terminate_{};
-
-  // persistent storage provider
-  std::shared_ptr<istorage> storage_{};
+  data_storage storage_{};
 };
 
 } // namespace cosmos::inline v1

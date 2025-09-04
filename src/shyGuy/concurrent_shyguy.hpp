@@ -5,7 +5,7 @@
 #include "shyguy_request.hpp"
 #include "blocking_queue.hpp"
 #include "fwd_vocabulary.hpp"
-#include "storage.hpp"
+#include "fs_storage.hpp"
 
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
@@ -18,7 +18,6 @@
 
 namespace cosmos::inline v1
 {
-
     class id_generator
     {
     public:
@@ -40,9 +39,9 @@ namespace cosmos::inline v1
         using root_name_str = std::string;
         using name_str      = std::string;
         using cron_tab_str  = std::string;
-        using logger_t = std::shared_ptr<spdlog::logger>;
+        using logger_t      = std::shared_ptr<spdlog::logger>;
     public:
-        explicit concurrent_shyguy(request_queue_t rq, terminator_t t, std::shared_ptr<istorage> storage):
+        explicit concurrent_shyguy(request_queue_t rq, terminator_t t, data_storage storage):
             logger{spdlog::get("shyguy_logger")}, request_queue{std::move(rq)}, running{std::move(t)}, storage{std::move(storage)}
          {}
 
@@ -101,7 +100,7 @@ namespace cosmos::inline v1
         request_queue_t request_queue;
         terminator_t    running;
         id_generator uuid_generator{};
-        std::shared_ptr<istorage> storage{};
+        data_storage storage{};
     };
 
     class notify_updater
@@ -174,42 +173,4 @@ namespace cosmos::inline v1
         }
     }
 
-    inline auto super_run() -> bool
-    {
-        return false;
-        /*
-        auto file_logger    = spdlog::basic_logger_mt("file_log", "logs/file-log.txt", true);
-        auto task_queue     = std::make_shared<blocking_queue<std::vector<task>>>();
-        //  auto io_queue   = std::make_shared<blocking_queue<std::vector<task>>>();
-        auto work_pool      = exec::static_thread_pool{3};
-        auto work_scheduler = work_pool.get_scheduler();
-        auto scope          = exec::async_scope{};
-        //1. auto dependency_map = concurrent_map<string, dags>{}
-        //2. auto task_maintainer = concurrent_task_maintainer{};
-
-        ex::sender auto worker = work_sender(work_scheduler, file_logger, task_queue);
-        scope.spawn(std::move(worker));
-
-        scope.spawn(
-            ex::on(work_scheduler,
-                ex::just(poll_parameters{file_logger, task_queue})
-                | ex::then(polling_work)
-            )
-        );
-
-        scope.spawn(
-             ex::on(work_scheduler,
-                ex::just()
-                | ex::then([] {
-                    while (false) {
-                        //auto value = co_await zmq();
-                        //io_queue.enqueue(co_await zmq());
-                    }
-                })
-            )
-        );
-
-        (void) stdexec::sync_wait(scope.on_empty());
-        work_pool.request_stop();*/
-    }
 } // namespace cosmos::inline v1
