@@ -95,12 +95,11 @@ function(setup_dependencies)
     add_library(uuid::uuid ALIAS stduuid)
   endif()
 
-  # Testing dependencies
-  if(BUILD_TESTING)
-    # Catch2 v3 for tests
-    if(NOT TARGET Catch2::Catch2WithMain)
-      CPMAddPackage("gh:catchorg/Catch2@3.6.0")
-    endif()
+
+  # Catch2 v3 for tests
+  if(NOT TARGET Catch2::Catch2WithMain)
+    CPMAddPackage("gh:catchorg/Catch2@3.6.0")
   endif()
+
 
 endfunction()

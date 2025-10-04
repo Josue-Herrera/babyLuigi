@@ -27,12 +27,8 @@ target_link_libraries(
         shyguy
         PRIVATE
         cron_parser
-)
-
-target_link_libraries(
-        shyguy
-        PRIVATE
         storage
+        tui
 )
 
 target_link_system_libraries(

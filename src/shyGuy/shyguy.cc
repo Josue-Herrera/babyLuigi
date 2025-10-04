@@ -103,7 +103,7 @@ namespace cosmos::inline v1 {
                         file_logger->info("{}", interactive);
                         if (interactive) {
                             interactive_shyguy i{request_queue};
-                            i.demo();
+                            i.runtui();
                         }
                     })
                 );

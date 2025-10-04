@@ -17,6 +17,7 @@
 #include "ftxui/screen/color_info.hpp"
 #include <ftxui/dom/table.hpp>      // for Table, TableSelection
 #include <array>
+#include <tui.h>
 #include <string>
 #include <memory>
 
@@ -35,7 +36,11 @@ private:
     request_queue_t request_queue;
 public:
     explicit interactive_shyguy(request_queue_t const& in): request_queue{in}{};
-
+    inline auto runtui ()
+    {
+        tui app{};
+        app.run();
+    }
     inline auto demo () {
         using namespace ftxui;
         using namespace std::string_literals;
