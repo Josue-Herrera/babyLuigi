@@ -1,15 +1,206 @@
 #include "fs_storage.hpp"
 
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
-#include <cstring>
+#include <sstream>
 #include <utility>
 
 namespace fs = std::filesystem;
 
 namespace cosmos::inline v1
 {
+
+    namespace
+    {
+        using namespace std::string_view_literals;
+
+        constexpr std::array schedule_frequency_names{
+            "hourly"sv, "daily"sv, "weekly"sv, "monthly"sv, "yearly"sv, "custom"sv
+        };
+
+        constexpr std::array dag_run_status_names{
+            "none"sv, "success"sv, "running"sv, "failed"sv, "skipped"sv, "queued"sv
+        };
+
+        [[nodiscard]] auto normalize_token(std::string_view value) noexcept -> std::string
+        {
+            std::string normalized;
+            normalized.reserve(value.size());
+            for (char ch: value)
+            {
+                normalized.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+            }
+            return normalized;
+        }
+
+        [[nodiscard]] auto is_star_like(std::string_view token) noexcept -> bool
+        {
+            return token == "*" || token == "?";
+        }
+
+        [[nodiscard]] auto is_simple_value(std::string_view token) noexcept -> bool
+        {
+            if (token.empty())
+                return false;
+            return token.find_first_of("*/-,") == std::string_view::npos;
+        }
+
+        [[nodiscard]] auto tokenize_cron(std::string_view cron) noexcept -> std::optional<std::array<std::string_view, 5>>
+        {
+            std::array<std::string_view, 5> tokens{};
+            std::size_t index = 0;
+            std::size_t pos = 0;
+            while (index < tokens.size() and pos < cron.size())
+            {
+                while (pos < cron.size() and std::isspace(static_cast<unsigned char>(cron[pos])))
+                    ++pos;
+                if (pos >= cron.size())
+                    break;
+                std::size_t end = pos;
+                while (end < cron.size() and not std::isspace(static_cast<unsigned char>(cron[end])))
+                    ++end;
+                tokens[index++] = std::string_view{cron.data() + pos, end - pos};
+                pos = end;
+            }
+            if (index != tokens.size())
+                return std::nullopt;
+            return tokens;
+        }
+    } // namespace
+
+    auto to_string(schedule_frequency frequency) noexcept -> std::string_view
+    {
+        using enum schedule_frequency;
+        switch (frequency)
+        {
+            case hourly:  return schedule_frequency_names[0];
+            case daily:   return schedule_frequency_names[1];
+            case weekly:  return schedule_frequency_names[2];
+            case monthly: return schedule_frequency_names[3];
+            case yearly:  return schedule_frequency_names[4];
+            case custom:
+            default:
+                return schedule_frequency_names[5];
+        }
+    }
+
+    auto schedule_frequency_from_string(std::string_view value) noexcept -> schedule_frequency
+    {
+        auto normalized = normalize_token(value);
+        if (normalized == schedule_frequency_names[0]) return schedule_frequency::hourly;
+        if (normalized == schedule_frequency_names[1]) return schedule_frequency::daily;
+        if (normalized == schedule_frequency_names[2]) return schedule_frequency::weekly;
+        if (normalized == schedule_frequency_names[3]) return schedule_frequency::monthly;
+        if (normalized == schedule_frequency_names[4]) return schedule_frequency::yearly;
+        return schedule_frequency::custom;
+    }
+
+    auto classify_schedule(std::string_view cron_expression) noexcept -> schedule_frequency
+    {
+        if (cron_expression.empty())
+            return schedule_frequency::custom;
+
+        auto tokens = tokenize_cron(cron_expression);
+        if (not tokens)
+            return schedule_frequency::custom;
+
+        auto const &minute = (*tokens)[0];
+        auto const &hour   = (*tokens)[1];
+        auto const &dom    = (*tokens)[2];
+        auto const &month  = (*tokens)[3];
+        auto const &dow    = (*tokens)[4];
+
+        if (not is_simple_value(minute))
+            return schedule_frequency::custom;
+
+        if (is_star_like(hour) and is_star_like(dom) and is_star_like(month) and is_star_like(dow))
+            return schedule_frequency::hourly;
+
+        if (is_simple_value(hour) and is_star_like(dom) and is_star_like(month) and is_star_like(dow))
+            return schedule_frequency::daily;
+
+        if (is_simple_value(hour) and is_star_like(dom) and is_star_like(month) and not is_star_like(dow))
+            return schedule_frequency::weekly;
+
+        if (is_simple_value(hour) and not is_star_like(dom) and is_star_like(month) and is_star_like(dow))
+            return schedule_frequency::monthly;
+
+        if (is_simple_value(hour) and not is_star_like(dom) and not is_star_like(month))
+            return schedule_frequency::yearly;
+
+        return schedule_frequency::custom;
+    }
+
+    auto to_string(dag_run_status status) noexcept -> std::string_view
+    {
+        using enum dag_run_status;
+        switch (status)
+        {
+            case none:    return dag_run_status_names[0];
+            case success: return dag_run_status_names[1];
+            case running: return dag_run_status_names[2];
+            case failed:  return dag_run_status_names[3];
+            case skipped: return dag_run_status_names[4];
+            case queued:  return dag_run_status_names[5];
+            default:      return dag_run_status_names[0];
+        }
+    }
+
+    auto dag_run_status_from_string(std::string_view value) noexcept -> dag_run_status
+    {
+        auto normalized = normalize_token(value);
+        if (normalized == dag_run_status_names[1]) return dag_run_status::success;
+        if (normalized == dag_run_status_names[2]) return dag_run_status::running;
+        if (normalized == dag_run_status_names[3]) return dag_run_status::failed;
+        if (normalized == dag_run_status_names[4]) return dag_run_status::skipped;
+        if (normalized == dag_run_status_names[5]) return dag_run_status::queued;
+        return dag_run_status::none;
+    }
+
+    [[nodiscard]] static auto metadata_to_json(task_metadata const& metadata) -> nlohmann::json
+    {
+        nlohmann::json meta;
+        meta["schedule"] = {
+            {"cron", metadata.schedule.cron_expression},
+            {"frequency", to_string(metadata.schedule.frequency)}
+        };
+        meta["statuses"] = {
+            {"previous", to_string(metadata.statuses.previous)},
+            {"current", to_string(metadata.statuses.current)}
+        };
+        return meta;
+    }
+
+    [[nodiscard]] static auto metadata_from_json(nlohmann::json const& json) -> std::optional<task_metadata>
+    {
+        if (not json.is_object())
+            return std::nullopt;
+
+        task_metadata metadata{};
+        bool has_data = false;
+
+        if (auto const it = json.find("schedule"); it != json.end() and it->is_object())
+        {
+            metadata.schedule.cron_expression = it->value("cron", "");
+            metadata.schedule.frequency = schedule_frequency_from_string(it->value("frequency", "custom"));
+            has_data = true;
+        }
+
+        if (auto const it = json.find("statuses"); it != json.end() and it->is_object())
+        {
+            metadata.statuses.previous = dag_run_status_from_string(it->value("previous", "none"));
+            metadata.statuses.current = dag_run_status_from_string(it->value("current", "none"));
+            has_data = true;
+        }
+
+        if (not has_data)
+            return std::nullopt;
+
+        return metadata;
+    }
 
     // Very simple non-cryptographic hex hash (FNV-1a 64-bit) for IDs
     static std::string fnv1a_hex(const std::span<const std::byte> bytes)
@@ -40,10 +231,10 @@ namespace cosmos::inline v1
         if (std::error_code ec; not fs::exists(p, ec))
         {
             std::ofstream os(p, std::ios::binary);
-            if (!os)
+            if (not os)
                 return std::unexpected(storage_error::io);
             os.write(reinterpret_cast<const char *>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
-            if (!os)
+            if (not os)
                 return std::unexpected(storage_error::io);
         }
         return id;
@@ -93,10 +284,10 @@ namespace cosmos::inline v1
         tmp += ".tmp";
         {
             std::ofstream os(tmp);
-            if (!os)
+            if (not os)
                 return std::unexpected(storage_error::io);
             os << j.dump(2);
-            if (!os)
+            if (not os)
                 return std::unexpected(storage_error::io);
         }
         fs::rename(tmp, p, ec);
@@ -211,12 +402,17 @@ namespace cosmos::inline v1
     }
 
 
-   auto fs_task_store::upsert_task(shyguy_task const &task, const std::optional<std::string> &blob_id, const std::optional<uint64_t> if_version) const -> std::expected<uint64_t, storage_error>
+   auto fs_task_store::upsert_task(
+    shyguy_task const &task,
+    const std::optional<std::string> &blob_id,
+    const std::optional<uint64_t> if_version,
+    const std::optional<task_metadata> &metadata) const -> std::expected<uint64_t, storage_error>
     {
         std::scoped_lock lk(mtx_);
         const fs::path dir = task_dir_ / task.associated_dag;
         const fs::path p = dir / (task.name + ".json");
         uint64_t new_version = 1;
+        std::optional<nlohmann::json> existing_metadata;
         if (fs::exists(p))
         {
             auto cur = read_json(p);
@@ -226,6 +422,8 @@ namespace cosmos::inline v1
             if (if_version and ver != *if_version)
                 return std::unexpected(storage_error::conflict);
             new_version = ver + 1;
+            if (cur->contains("metadata"))
+                existing_metadata = cur->at("metadata");
         }
         else
         {
@@ -237,6 +435,10 @@ namespace cosmos::inline v1
         j["value"] = task;
         if (blob_id)
             j["blob_id"] = *blob_id;
+        if (metadata)
+            j["metadata"] = metadata_to_json(*metadata);
+        else if (existing_metadata)
+            j["metadata"] = *existing_metadata;
         if (auto w = write_json_atomic(p, j); not w)
             return std::unexpected(w.error());
         return new_version;
@@ -255,6 +457,8 @@ namespace cosmos::inline v1
         e.value = j->at("value").get<shyguy_task>();
         if (j->contains("blob_id"))
             e.blob_id = j->value("blob_id", "");
+        if (j->contains("metadata"))
+            e.metadata = metadata_from_json(j->at("metadata"));
         return e;
     }
 
@@ -278,6 +482,8 @@ namespace cosmos::inline v1
             catch (...) { continue; }
             if (j->contains("blob_id"))
                 e.blob_id = j->value("blob_id", "");
+            if (j->contains("metadata"))
+                e.metadata = metadata_from_json(j->at("metadata"));
             out.push_back(std::move(e));
         }
         return out;

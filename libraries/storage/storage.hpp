@@ -1,12 +1,13 @@
 // Storage interfaces for DAGs and Tasks (snake_case classes)
 #pragma once
 
+#include <array>
 #include <expected>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <optional>
-#include <span>
 
 #include "shyguy_request.hpp" // for shyguy_dag, shyguy_task
 
@@ -29,11 +30,54 @@ struct dag_entry {
   uint64_t version{0};
 };
 
+enum class schedule_frequency : uint8_t {
+  hourly,
+  daily,
+  weekly,
+  monthly,
+  yearly,
+  custom,
+  unset,
+  unknown
+};
+
+[[nodiscard]] auto to_string(schedule_frequency frequency) noexcept -> std::string_view;
+[[nodiscard]] auto schedule_frequency_from_string(std::string_view value) noexcept -> schedule_frequency;
+[[nodiscard]] auto classify_schedule(std::string_view cron_expression) noexcept -> schedule_frequency;
+
+struct schedule_metadata {
+  std::string cron_expression{};
+  schedule_frequency frequency{schedule_frequency::unset};
+};
+
+enum class dag_run_status : uint8_t {
+  none,
+  success,
+  running,
+  failed,
+  skipped,
+  queued
+};
+
+[[nodiscard]] auto to_string(dag_run_status status) noexcept -> std::string_view;
+[[nodiscard]] auto dag_run_status_from_string(std::string_view value) noexcept -> dag_run_status;
+
+struct task_status_pair {
+  dag_run_status previous{dag_run_status::none};
+  dag_run_status current{dag_run_status::none};
+};
+
+struct task_metadata {
+  schedule_metadata schedule{};
+  task_status_pair statuses{};
+};
+
 struct task_entry {
   shyguy_task value{};
   uint64_t version{0};
   // optional blob id that points to task content
   std::optional<std::string> blob_id{};
+  std::optional<task_metadata> metadata{};
 };
 
 template<class blob_store>
@@ -54,7 +98,7 @@ concept dag_storeable = requires(dag_store d, shyguy_dag const& dag, std::string
 template<class task_store>
 concept task_storeable = requires(task_store t, shyguy_task const& task, std::string_view dag, std::string_view name)
 {
-  { t.upsert_task(task, std::optional<std::string>{}, std::optional<uint64_t>{}) } -> std::same_as<std::expected<uint64_t, storage_error>>;
+  { t.upsert_task(task, std::optional<std::string>{}, std::optional<uint64_t>{}, std::optional<task_metadata>{}) } -> std::same_as<std::expected<uint64_t, storage_error>>;
   { t.get_task(dag, name) } -> std::same_as<std::expected<task_entry, storage_error>>;
   { t.list_tasks(dag) } -> std::same_as<std::expected<std::vector<task_entry>, storage_error>>;
   { t.erase_task(dag, name, std::optional<uint64_t>{}) } -> std::same_as<std::expected<void, storage_error>>;

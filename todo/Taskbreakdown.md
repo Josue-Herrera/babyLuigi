@@ -30,11 +30,15 @@
 ----
 ----
 
-### NEXT ITEMS 
-- Default root is ./data. Easy to change later; we can add a CLI flag (e.g., --data-root) if you want.
-- Blob IDs currently use a simple FNV-1a hash; can upgrade to SHA-256 when desired.
-- Existing content-folder behavior is kept for compatibility; storage adds durable indexing and content-addressed blobs.
+### Completed work
+- [x] Define wire format (JSON) for commands: `{ command: "create|remove|execute|snapshot", type: "dag|task", value: {...} }`.
+- [x] Implement ZMQ Router in `shyguy::run()` to accept requests and return results.
+- [x] Add request parsing → `shyguy_request` + `command_enum` mapping.
+- [x] Connect to `concurrent_shyguy::process()` and return `command_result_type` to client.
+- [x] Implement a minimal client in `src/babyLuigi` (optional now; CLI or example script).
 
+### NEXT ITEMS
+- implementing the interactive version of shyguy, we need to implement the actions in the tui library.
 
 ### M1: Command Routing & Networking
 - [x] Define wire format (JSON) for commands: `{ command: "create|remove|execute|snapshot", type: "dag|task", value: {...} }`.
@@ -42,7 +46,7 @@
 - [ ] Add request parsing → `shyguy_request` + `command_enum` mapping.
 - [ ] Connect to `concurrent_shyguy::process()` and return `command_result_type` to client.
 - [ ] Implement a minimal client in `src/babyLuigi` (optional now; CLI or example script).
-- 
+-
 
 ### M2: Execution Flow Integration
 - [ ] Implement `concurrent_shyguy::execute(shyguy_dag)` fully:
@@ -108,4 +112,3 @@
   - `src/shyGuy/shyexecutioner.cc:1`
   - `src/shyGuy/shyguy.hpp:1`
   - `src/shyGuy/shyguy.cc:1`
-

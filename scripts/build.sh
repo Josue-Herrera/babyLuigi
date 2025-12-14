@@ -1,2 +1,1 @@
-cmake -S . -B build -Wno-dev
-cmake --build build  --parallel --target all --clean-first
+cmake -S . -B build -Wno-dev -DCMAKE_POLICY_VERSION_MINIMUM=3.5

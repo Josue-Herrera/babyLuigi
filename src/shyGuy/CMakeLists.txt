@@ -29,6 +29,7 @@ target_link_libraries(
         cron_parser
         storage
         tui
+        threadsafe_shyguy
 )
 
 target_link_system_libraries(
@@ -45,6 +46,5 @@ target_link_system_libraries(
         ftxui::screen
         ftxui::dom
         ftxui::component
-        uuid::uuid
 )
 

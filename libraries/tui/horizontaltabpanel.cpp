@@ -7,14 +7,13 @@
 #include <utility>
 namespace cosmos::inline v1
 {
-
     horizontal_tab_panel::horizontal_tab_panel(ftxui::Components components, std::vector<std::string> values)
         :   names{std::move(values)}
     {
         selection = ftxui::Menu(&names, & selected_tab);
         tab       = ftxui::Container::Tab(std::move(components), &selected_tab);
         component = ftxui::Container::Horizontal({tab, selection});
-        renderer = ftxui::Renderer(component, [&]
+        renderer  = ftxui::Renderer(component, [&]
         {
            return ftxui::hbox({
                selection->Render(),
@@ -24,4 +23,17 @@ namespace cosmos::inline v1
         });
     }
 
+    horizontal_tab_panel& horizontal_tab_panel::operator=(horizontal_tab_panel const & rhs)
+    {
+        if (this == &rhs)
+            return *this;
+
+        selection = rhs.selection;
+        tab       = rhs.tab;
+        component = rhs.component;
+        renderer  = rhs.renderer;
+        names     = rhs.names;
+        return *this;
+
+    }
 }

@@ -5,6 +5,10 @@
 #ifndef TUI_H
 #define TUI_H
 
+// *** Project ***
+#include <fwd_vocabulary.hpp>
+
+// *** Standard ***
 #include <atomic>
 #include <thread>
 
@@ -14,7 +18,7 @@ namespace cosmos::inline v1
 class tui
 {
 public:
-    void run();
+    void run(concurrent_shyguy_t shyguy);
     std::int32_t shift {};
     std::atomic_bool refresh{true};
     std::thread refresh_thread;

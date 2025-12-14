@@ -6,12 +6,18 @@ file(GLOB STORAGE_SOURCES ${HEADER_DIR}/*.cpp)
 
 add_library(tui STATIC ${STORAGE_HEADERS} ${STORAGE_SOURCES})
 set_target_properties(tui PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(tui PUBLIC ${HEADER_DIR} ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(tui PUBLIC
+        ${HEADER_DIR}
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/libraries/
+)
 
 target_link_libraries(
         tui
         PRIVATE
         cron_parser
+        storage
+        threadsafe_shyguy
 )
 
 target_link_system_libraries(
@@ -20,5 +26,7 @@ target_link_system_libraries(
         ftxui::screen
         ftxui::dom
         ftxui::component
+        spdlog::spdlog
+        CLI11::CLI11
 )
 

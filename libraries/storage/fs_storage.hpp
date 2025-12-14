@@ -53,7 +53,8 @@ public:
   [[nodiscard]] auto upsert_task(
     shyguy_task const& task,
     const std::optional<std::string>& blob_id = std::nullopt,
-    std::optional<uint64_t> if_version = std::nullopt
+    std::optional<uint64_t> if_version = std::nullopt,
+    const std::optional<task_metadata>& metadata = std::nullopt
     ) const -> std::expected<uint64_t, storage_error>;
 
   [[nodiscard]] auto get_task(
@@ -97,4 +98,3 @@ private:
 static_assert(is_storageable_v<fs_storage>, "Must implement storage interface");
 
 } // namespace cosmos::inline v1
-

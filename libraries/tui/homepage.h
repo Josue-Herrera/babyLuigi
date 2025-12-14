@@ -9,7 +9,7 @@
 #include <ftxui/component/component.hpp>
 
 // *** Standard ***
-#include <string_view>
+#include <string>
 #include <vector>
 
 namespace cosmos::inline v1
@@ -17,7 +17,7 @@ namespace cosmos::inline v1
 
 class homepage
 {
-    inline static const std::vector<std::string> homepage_tabs {"dags", "actions"};
+    inline static const std::vector<std::string> homepage_tabs {" dags ", " actions "};
 public:
 
     explicit homepage(ftxui::Components);

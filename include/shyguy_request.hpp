@@ -281,7 +281,7 @@ namespace cosmos::inline v1
         std::function<auto()->void> task_function;
         command_result_type result;
         std::string name{};
-        std::vector<char> contents{};
+        std::string contents{};
         std::size_t index{};
     };
 

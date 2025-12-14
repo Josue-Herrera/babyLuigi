@@ -60,4 +60,3 @@ namespace cosmos::inline v1
         return { result };
     }
 } // namespace cosmos::inline v1
-

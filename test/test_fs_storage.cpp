@@ -199,6 +199,41 @@ TEST_CASE("fs_task_store CRUD + versions + blob_id", "[fs_storage][task]")
   REQUIRE(del_missing.error() == storage_error::not_found);
 }
 
+TEST_CASE("fs_task_store stores schedule metadata", "[fs_storage][task][metadata]")
+{
+  temp_dir_guard tmp{"fs_storage_task_meta_"};
+  fs_task_store tasks{tmp.path};
+
+  shyguy_task t1{};
+  t1.name = "task_meta";
+  t1.associated_dag = "dagMeta";
+
+  task_metadata metadata{};
+  metadata.schedule.cron_expression = "0 * * * *";
+  metadata.schedule.frequency = schedule_frequency::hourly;
+  metadata.statuses.previous = dag_run_status::success;
+  metadata.statuses.current  = dag_run_status::running;
+
+  auto created = tasks.upsert_task(t1, std::nullopt, std::nullopt, metadata);
+  REQUIRE(created.has_value());
+
+  auto loaded = tasks.get_task("dagMeta", "task_meta");
+  REQUIRE(loaded.has_value());
+  REQUIRE(loaded->metadata.has_value());
+  auto const &meta = loaded->metadata.value();
+  REQUIRE(meta.schedule.cron_expression == metadata.schedule.cron_expression);
+  REQUIRE(meta.schedule.frequency == metadata.schedule.frequency);
+  REQUIRE(meta.statuses.previous == metadata.statuses.previous);
+  REQUIRE(meta.statuses.current == metadata.statuses.current);
+
+  auto updated = tasks.upsert_task(t1, std::nullopt, created.value());
+  REQUIRE(updated.has_value());
+  auto reloaded = tasks.get_task("dagMeta", "task_meta");
+  REQUIRE(reloaded.has_value());
+  REQUIRE(reloaded->metadata.has_value());
+  REQUIRE(reloaded->metadata->schedule.frequency == metadata.schedule.frequency);
+}
+
 TEST_CASE("fs_storage aggregates stores with shared root", "[fs_storage][api]")
 {
   temp_dir_guard tmp{"fs_storage_root_"};
@@ -217,4 +252,3 @@ TEST_CASE("fs_storage aggregates stores with shared root", "[fs_storage][api]")
   shyguy_task t{.name = "T", .associated_dag = "D"};
   REQUIRE(store.tasks().upsert_task(t).has_value());
 }
-

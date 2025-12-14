@@ -7,7 +7,7 @@ function(setup_dependencies)
 
   # For each dependency, see if it's
   # already been provided to us by a parent project
-  
+
   if(NOT TARGET fmtlib::fmtlib)
     cpmaddpackage("gh:fmtlib/fmt#11.0.1")
   endif()
@@ -46,7 +46,7 @@ function(setup_dependencies)
   endif ()
 
   if(NOT TARGET ftxui::screen)
-    cpmaddpackage("gh:ArthurSonzogni/FTXUI@5.0.0")
+    cpmaddpackage("gh:ArthurSonzogni/FTXUI@6.0.0")
   endif()
 
   if(NOT TARGET zmq::zmq)
@@ -81,20 +81,6 @@ function(setup_dependencies)
     unset(CATCH_BUILD_EXAMPLES CACHE)
 
   endif()
-
-  if(NOT TARGET uuid::uuid)
-    cpmaddpackage(
-            NAME
-            stduuid
-            VERSION
-            1.2.3
-            GITHUB_REPOSITORY
-            "mariusbancila/stduuid"
-            OPTIONS
-            "UUID_SYSTEM_GENERATOR ON")
-    add_library(uuid::uuid ALIAS stduuid)
-  endif()
-
 
   # Catch2 v3 for tests
   if(NOT TARGET Catch2::Catch2WithMain)

@@ -1,0 +1,15 @@
+# Global settings for all files
+CompileFlags:
+  Add: [-xc++, -std=c++23, -Wall] # Add C++20 standard and common warnings
+
+Diagnostics:
+  UnusedIncludes: Strict # Enable strict checking for unused includes
+  ClangTidy:
+    Add: [performance-*, modernize-*, readability-*] # Enable groups of Clang-Tidy checks
+    Remove: [modernize-use-trailing-return-type] # Disable a specific Clang-Tidy check
+    CheckOptions:
+      readability-identifier-naming.VariableCase: snake_case # Customize a Clang-Tidy check option
+
+InlayHints:
+  ParameterNames: No # Disable inlay hints for parameter names
+  DeducedTypes: Yes # Enable inlay hints for deduced types
