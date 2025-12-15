@@ -6,6 +6,10 @@
 #include <range/v3/all.hpp>
 #include <spdlog/spdlog.h>
 
+#include <cron_parser/cron_expression.hpp>
+#include <blocking_priority_queue.hpp>
+#include <task_request.hpp>
+
 #include <ranges>
 #include <span>
 
@@ -99,6 +103,13 @@ namespace cosmos::inline v1
 
     auto concurrent_shyguy::execute(shyguy_dag const &dag) noexcept -> command_result_type
     {
+        return execute_at(dag, std::chrono::steady_clock::now());
+    }
+
+    auto concurrent_shyguy::execute_at(shyguy_dag const& dag, std::chrono::steady_clock::time_point scheduled_time) noexcept
+        -> command_result_type
+    {
+        std::lock_guard lock(mutex);
         auto const dag_iter = dags.find(dag.name);
         if (dag_iter == end(dags))
             return std::unexpected(command_error::dag_not_found);
@@ -110,35 +121,37 @@ namespace cosmos::inline v1
 
         auto const &order = ordered_tasks.value();
 
-        request_queue->enqueue
-        ({
-            std::views::transform(order, [this, &dag](auto const &task_name)
+        auto tr = std::make_shared<task_request>(task_request{
+            .scheduled_time = scheduled_time,
+            .sequence = task_request_sequence.fetch_add(1U, std::memory_order_relaxed),
+            .payload = task_request_payload{
+            std::views::transform(order, [this, &dag](auto const& task_name)
             {
                 task_runner runner{};
                 runner.name = task_name;
                 if (storage)
                 {
                     auto rv = storage->tasks().get_task(dag.name, task_name);
-                    if (not rv and rv.value().value.file_content.has_value())
-                    {
+                    if (rv && rv.value().value.file_content.has_value())
                         runner.contents = rv.value().value.file_content.value();
-                    }
                 }
 
                 runner.task_function = [this]() noexcept -> void
                 {
                     std::lock_guard lock(mutex);
                     std::string const command{"./task_executable"};
-                    // Placeholder for actual command
                     if (auto output = execute_command(command); output)
                         logger->info("Task executed successfully with output: {}", output.value());
                     else
                         logger->error("Task execution failed with exit code: {}", output.error());
                 };
+
                 return runner;
             }) | ranges::v3::to<std::vector>(),
             dag_iter->second
-        });
+        }});
+
+        request_queue->enqueue(std::move(tr));
 
         return std::unexpected(command_error::not_currently_supported);
     }
@@ -234,8 +247,43 @@ namespace cosmos::inline v1
     auto concurrent_shyguy::next_scheduled_dag() const noexcept -> std::optional<notification_type>
     {
         std::lock_guard lock(this->mutex);
-        return {notification_type{.time = std::chrono::steady_clock::now() + std::chrono::seconds{5},
-                                  .associated_request = {},
-                                  .command_type = command_enum::execute}};
+
+        if (schedules.empty())
+            return std::nullopt;
+
+        using system_clock = std::chrono::system_clock;
+        auto const now_system = system_clock::now();
+
+        std::optional<std::pair<std::string, system_clock::time_point>> next{};
+        for (auto const& [dag_name, cron_expr] : schedules)
+        {
+            try
+            {
+                geheb::cron_expression cron{cron_expr};
+                auto const tp = cron.calc_next(now_system);
+                if (not next || tp < next->second)
+                    next = std::pair{dag_name, tp};
+            }
+            catch (...)
+            {
+                // Ignore invalid schedule in-memory.
+            }
+        }
+
+        if (not next)
+            return std::nullopt;
+
+        auto const wait = next->second - now_system;
+        auto const now_steady = std::chrono::steady_clock::now();
+
+        shyguy_request request{};
+        request.command = command_enum::execute;
+        request.emplace(shyguy_dag{.name = next->first, .schedule = schedules.at(next->first)});
+
+        return notification_type{
+            .time = now_steady + std::chrono::duration_cast<std::chrono::steady_clock::duration>(wait),
+            .associated_request = std::move(request),
+            .command_type = command_enum::execute,
+        };
     }
 }

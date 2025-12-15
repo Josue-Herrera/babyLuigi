@@ -3,12 +3,14 @@
 // *** Project Includes ***
 #include "graph/graph.hpp"
 #include "shyguy_request.hpp"
-#include "blocking_queue.hpp"
 #include "fwd_vocabulary.hpp"
 #include "fs_storage.hpp"
 
 // *** 3rd Party Includes ***
 #include <spdlog/spdlog.h>
+
+#include <atomic>
+#include <chrono>
 
 namespace cosmos::inline v1
 {
@@ -35,6 +37,7 @@ namespace cosmos::inline v1
         auto create(shyguy_dag const &dag) noexcept -> command_result_type;
         auto remove(shyguy_dag const &dag) noexcept -> command_result_type;
         auto execute(shyguy_dag const &dag) noexcept -> command_result_type;
+        auto execute_at(shyguy_dag const& dag, std::chrono::steady_clock::time_point scheduled_time) noexcept -> command_result_type;
         auto snapshot(shyguy_dag const &dag) noexcept -> command_result_type;
 
         auto create(shyguy_task const &task) noexcept -> command_result_type;
@@ -76,6 +79,7 @@ namespace cosmos::inline v1
         request_queue_t request_queue;
         terminator_t    running;
         data_storage storage{};
+        std::atomic_uint64_t task_request_sequence{0};
     };
 
     class notify_updater
@@ -103,13 +107,17 @@ namespace cosmos::inline v1
         std::condition_variable condition_variable_{};
     };
 
-    inline auto function_schedule_runner(notify_updater &notifier, concurrent_shyguy &shy_guy)
+    template <class AfterExecute>
+    inline auto function_schedule_runner(notify_updater &notifier,
+                                         concurrent_shyguy &shy_guy,
+                                         terminator_t running,
+                                         AfterExecute after_execute)
     {
         // default sleep time
         auto sleep_until_dag_scheduled = [&]() mutable -> notification_type
         {
             auto default_wait_time = std::chrono::steady_clock::now() + std::chrono::months(1);
-            while (true)
+            while (running->load(std::memory_order_relaxed))
             {
                 if (auto notification = notifier.sleep_until_or_notified(default_wait_time); notification.has_value())
                 {
@@ -118,11 +126,13 @@ namespace cosmos::inline v1
 
                 default_wait_time += std::chrono::months(1);
             }
+
+            return {.time = std::chrono::steady_clock::now(), .associated_request = {}, .command_type = command_enum::error};
         };
 
         auto launch_dag_and_sleep_till_next = [&](auto &notified) mutable
         {
-            while (true)
+            while (running->load(std::memory_order_relaxed))
             {
                 if (auto notification = notifier.sleep_until_or_notified(notified.time); notification.has_value())
                 {
@@ -132,6 +142,7 @@ namespace cosmos::inline v1
 
                 notified.associated_request.command = command_enum::execute;
                 (void) shy_guy.process(notified.associated_request);
+                after_execute();
 
                 auto const next_scheduled_time = shy_guy.next_scheduled_dag();
                 if (not next_scheduled_time.has_value())
@@ -141,11 +152,18 @@ namespace cosmos::inline v1
             }
         };
 
-        while (true)
+        while (running->load(std::memory_order_relaxed))
         {
             auto notification = sleep_until_dag_scheduled();
+            if (not running->load(std::memory_order_relaxed))
+                break;
             launch_dag_and_sleep_till_next(notification);
         }
+    }
+
+    inline auto function_schedule_runner(notify_updater &notifier, concurrent_shyguy &shy_guy, terminator_t running)
+    {
+        function_schedule_runner(notifier, shy_guy, std::move(running), [] {});
     }
 
 } // namespace cosmos::inline v1

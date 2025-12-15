@@ -18,7 +18,7 @@ namespace cosmos::inline v1
 class tui
 {
 public:
-    void run(concurrent_shyguy_t shyguy);
+    void run(concurrent_shyguy_t shyguy, input_queue_t io_queue);
     std::int32_t shift {};
     std::atomic_bool refresh{true};
     std::thread refresh_thread;

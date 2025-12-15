@@ -184,14 +184,15 @@ namespace cosmos::inline v1
         using request_t = std::variant<std::monostate, shyguy_dag, shyguy_task>;
         request_t data{std::monostate()};
 
-        auto emplace(auto &&value)
+        template <class T>
+        auto emplace(T&& value)
         {
-            using underlying_type = std::remove_cvref_t<decltype(value)>;
+            using underlying_type = std::remove_cvref_t<T>;
             using is_dag_type = std::is_same<underlying_type, shyguy_dag>;
             using is_task_type = std::is_same<underlying_type, shyguy_task>;
             static_assert(is_dag_type::value || is_task_type::value);
 
-            data.emplace(value);
+            data.template emplace<underlying_type>(std::forward<T>(value));
         }
 
         [[nodiscard]] inline auto name() const noexcept -> std::string

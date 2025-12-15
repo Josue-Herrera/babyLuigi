@@ -6,7 +6,7 @@
 // *** Project ***
 #include "homepage.h"
 #include "dagpanel.h"
-#include "horizontaltabpanel.h"
+#include "actionspanel.h"
 
 // *** 3rdparty ***
 #include <ftxui/component/screen_interactive.hpp>
@@ -17,16 +17,13 @@
 namespace cosmos::inline v1
 {
 
-static const std::vector<std::string> actions_entries {
-    "create", "delete", "update", "execute", "restart","snapshot"
-};
-
-void tui::run(concurrent_shyguy_t shyguy)
+void tui::run(concurrent_shyguy_t shyguy, input_queue_t io_queue)
 {
     auto screen = ftxui::ScreenInteractive::Fullscreen();
 
     dag_panel dag_pages_panel{shyguy};
-    horizontal_tab_panel actions {{}, actions_entries};
+
+    actions_panel actions{shyguy, io_queue};
 
     homepage home{{
         dag_pages_panel.render(),
@@ -45,6 +42,9 @@ void tui::run(concurrent_shyguy_t shyguy)
 ;
     screen.Loop(home.render());
     refresh = false;
+
+    if (refresh_thread.joinable())
+        refresh_thread.join();
 
 }
 

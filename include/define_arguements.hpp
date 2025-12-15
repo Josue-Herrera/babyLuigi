@@ -24,6 +24,9 @@ namespace cosmos::inline v1
     struct shy_arguments {
         std::string port{ "90909" };
         unsigned max_task_graphs{ 1000 };
+        unsigned max_dag_concurrency{ 2 };
+        unsigned max_task_concurrency{ 4 };
+        unsigned execution_idle_ms{ 500 };
         bool interactive {true};
     };
 
@@ -38,6 +41,15 @@ namespace cosmos::inline v1
 
         app.add_option("-m,--max-graphs", defaults.max_task_graphs,
             fmt::format("Max number of task graphs (default: {})", defaults.max_task_graphs));
+
+        app.add_option("--max-dag-concurrency", defaults.max_dag_concurrency,
+            fmt::format("Max concurrent DAG runs (default: {})", defaults.max_dag_concurrency));
+
+        app.add_option("--max-task-concurrency", defaults.max_task_concurrency,
+            fmt::format("Max concurrent tasks per DAG (default: {})", defaults.max_task_concurrency));
+
+        app.add_option("--execution-idle-ms", defaults.execution_idle_ms,
+            fmt::format("Executioner idle shutdown milliseconds (default: {})", defaults.execution_idle_ms));
 
         app.add_flag("-i,--interactive", defaults.interactive,
             fmt::format("Use interactive TUI (default: {})", defaults.max_task_graphs));

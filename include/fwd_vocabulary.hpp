@@ -14,12 +14,15 @@ namespace cosmos::inline v1
     class task_runner;
     class shyguy_request;
     template <typename T> class blocking_queue;
+    template <typename T, typename Compare> class blocking_priority_queue;
     class fs_storage;
     class concurrent_shyguy;
+    struct task_request;
+    using task_request_ptr = std::shared_ptr<task_request>;
+    struct task_request_ptr_compare;
 
     using terminator_t     = std::shared_ptr<std::atomic_bool>;
-    using task_request     = std::pair<std::vector<task_runner>, directed_acyclic_graph>;
-    using request_queue_t  = std::shared_ptr<blocking_queue<task_request>>;
+    using request_queue_t  = std::shared_ptr<blocking_priority_queue<task_request_ptr, task_request_ptr_compare>>;
     using input_queue_t    = std::shared_ptr<blocking_queue<shyguy_request>>;
     using data_storage     = std::shared_ptr<fs_storage>;
     using concurrent_shyguy_t = std::shared_ptr<concurrent_shyguy>;
